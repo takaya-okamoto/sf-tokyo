@@ -2,9 +2,11 @@
 
 import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@repo/supabase/admin";
 
 export async function signUp(formData: FormData) {
   const supabase = await createServerClient();
+  const adminClient = createAdminClient();
 
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
@@ -20,27 +22,26 @@ export async function signUp(formData: FormData) {
   }
 
   if (authData.user) {
+    // Use admin client to bypass RLS for initial setup
     // Create profile with company role
-    // Using type assertion to bypass RLS-induced type restrictions
-    const { error: profileError } = await (supabase
-      .from("profiles") as ReturnType<typeof supabase.from>)
+    const { error: profileError } = await adminClient
+      .from("profiles")
       .insert({
         id: authData.user.id,
         email: authData.user.email!,
         role: "company",
-      } as never);
+      });
 
     if (profileError) {
       return { error: profileError.message };
     }
 
     // Create company
-    // Using type assertion to bypass RLS-induced type restrictions
-    const { data: company, error: companyError } = await (supabase
-      .from("companies") as ReturnType<typeof supabase.from>)
+    const { data: company, error: companyError } = await adminClient
+      .from("companies")
       .insert({
         name: companyName,
-      } as never)
+      })
       .select()
       .single();
 
@@ -48,30 +49,27 @@ export async function signUp(formData: FormData) {
       return { error: companyError.message };
     }
 
-    const companyId = (company as { id: string }).id;
-
     // Add user as company member (owner)
-    // Using type assertion to bypass RLS-induced type restrictions
-    const { error: memberError } = await (supabase
-      .from("company_members") as ReturnType<typeof supabase.from>)
+    const { error: memberError } = await adminClient
+      .from("company_members")
       .insert({
-        company_id: companyId,
+        company_id: company.id,
         user_id: authData.user.id,
         role: "owner",
-      } as never);
+      });
 
     if (memberError) {
       return { error: memberError.message };
     }
 
     // Create initial project
-    const { data: project, error: projectError } = await (supabase
-      .from("projects") as ReturnType<typeof supabase.from>)
+    const { data: project, error: projectError } = await adminClient
+      .from("projects")
       .insert({
-        company_id: companyId,
+        company_id: company.id,
         name: "My First Project",
         description: "Your first hearing project. Rename or edit as needed.",
-      } as never)
+      })
       .select()
       .single();
 
@@ -79,10 +77,8 @@ export async function signUp(formData: FormData) {
       return { error: projectError.message };
     }
 
-    const projectId = (project as { id: string }).id;
-
     // Redirect to the newly created project
-    redirect(`/projects/${projectId}`);
+    redirect(`/projects/${project.id}`);
   }
 
   redirect("/");
