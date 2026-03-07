@@ -2,7 +2,8 @@ import Link from "next/link";
 import { createServerClient } from "@/lib/supabase/server";
 import { Button } from "@repo/ui";
 import { signOut } from "../(auth)/actions";
-import { Building2, FileText, BarChart3, Settings, LogOut } from "lucide-react";
+import { Building2, Settings, LogOut } from "lucide-react";
+import { ProjectSelector } from "@/components/project-selector";
 
 export default async function DashboardLayout({
   children,
@@ -15,38 +16,34 @@ export default async function DashboardLayout({
   // Using type assertion to bypass RLS-induced type restrictions
   const { data: companyMemberData } = await (supabase
     .from("company_members") as ReturnType<typeof supabase.from>)
-    .select("company:companies(name)")
+    .select("company:companies(name), company_id")
     .eq("user_id", user?.id ?? "")
     .single();
 
-  const companyMember = companyMemberData as { company: { name: string } | null } | null;
+  const companyMember = companyMemberData as { company: { name: string } | null; company_id: string } | null;
 
   const companyName = companyMember?.company?.name ?? "Company";
+
+  // Get projects for the selector
+  const { data: projectsData } = await (supabase
+    .from("projects") as ReturnType<typeof supabase.from>)
+    .select("id, name")
+    .eq("company_id", companyMember?.company_id ?? "")
+    .order("created_at", { ascending: false });
+
+  const projects = (projectsData as Array<{ id: string; name: string }>) ?? [];
 
   return (
     <div className="min-h-screen bg-muted/30">
       <header className="sticky top-0 z-50 border-b bg-background">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center gap-2 font-semibold">
+            <Link href="/projects" className="flex items-center gap-2 font-semibold">
               <Building2 className="h-6 w-6" />
               <span>Hearing Platform</span>
             </Link>
+            <ProjectSelector projects={projects} />
             <nav className="hidden md:flex items-center gap-4">
-              <Link
-                href="/hearings"
-                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <FileText className="h-4 w-4" />
-                Hearings
-              </Link>
-              <Link
-                href="/results"
-                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <BarChart3 className="h-4 w-4" />
-                Analytics
-              </Link>
               <Link
                 href="/settings"
                 className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"

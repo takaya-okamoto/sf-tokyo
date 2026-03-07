@@ -8,7 +8,7 @@ import type { Database } from "@repo/database/types";
 
 type HearingRequest = Database["public"]["Tables"]["hearing_requests"]["Row"];
 
-export function HearingEditForm({ hearing }: { hearing: HearingRequest }) {
+export function HearingEditForm({ hearing, projectId }: { hearing: HearingRequest; projectId: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +21,6 @@ export function HearingEditForm({ hearing }: { hearing: HearingRequest }) {
     const formData = new FormData(e.currentTarget);
     const supabase = createBrowserClient();
 
-    // Using type assertion to bypass RLS-induced type restrictions
     const { error: updateError } = await (supabase
       .from("hearing_requests") as ReturnType<typeof supabase.from>)
       .update({
@@ -39,7 +38,7 @@ export function HearingEditForm({ hearing }: { hearing: HearingRequest }) {
       return;
     }
 
-    router.push("/hearings");
+    router.push(`/projects/${projectId}/hearings`);
     router.refresh();
   }
 

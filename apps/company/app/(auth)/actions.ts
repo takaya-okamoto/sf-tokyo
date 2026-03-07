@@ -48,12 +48,14 @@ export async function signUp(formData: FormData) {
       return { error: companyError.message };
     }
 
+    const companyId = (company as { id: string }).id;
+
     // Add user as company member (owner)
     // Using type assertion to bypass RLS-induced type restrictions
     const { error: memberError } = await (supabase
       .from("company_members") as ReturnType<typeof supabase.from>)
       .insert({
-        company_id: (company as { id: string }).id,
+        company_id: companyId,
         user_id: authData.user.id,
         role: "owner",
       } as never);
@@ -61,6 +63,26 @@ export async function signUp(formData: FormData) {
     if (memberError) {
       return { error: memberError.message };
     }
+
+    // Create initial project
+    const { data: project, error: projectError } = await (supabase
+      .from("projects") as ReturnType<typeof supabase.from>)
+      .insert({
+        company_id: companyId,
+        name: "My First Project",
+        description: "Your first hearing project. Rename or edit as needed.",
+      } as never)
+      .select()
+      .single();
+
+    if (projectError) {
+      return { error: projectError.message };
+    }
+
+    const projectId = (project as { id: string }).id;
+
+    // Redirect to the newly created project
+    redirect(`/projects/${projectId}`);
   }
 
   redirect("/");

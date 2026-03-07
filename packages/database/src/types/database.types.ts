@@ -7,6 +7,31 @@ export type Json =
   | Json[]
 
 export type Database = {
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          operationName?: string
+          query?: string
+          variables?: Json
+          extensions?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       ai_interview_messages: {
@@ -38,7 +63,7 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "interview_sessions"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
       ai_interview_summaries: {
@@ -73,7 +98,7 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "interview_sessions"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
       companies: {
@@ -142,7 +167,7 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
       event_logs: {
@@ -177,7 +202,7 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "interview_sessions"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
       hearing_requests: {
@@ -188,6 +213,7 @@ export type Database = {
           id: string
           instructions: string | null
           max_participants: number | null
+          project_id: string | null
           reward_amount: number | null
           reward_type: string | null
           status: Database["public"]["Enums"]["hearing_status"]
@@ -202,6 +228,7 @@ export type Database = {
           id?: string
           instructions?: string | null
           max_participants?: number | null
+          project_id?: string | null
           reward_amount?: number | null
           reward_type?: string | null
           status?: Database["public"]["Enums"]["hearing_status"]
@@ -216,6 +243,7 @@ export type Database = {
           id?: string
           instructions?: string | null
           max_participants?: number | null
+          project_id?: string | null
           reward_amount?: number | null
           reward_type?: string | null
           status?: Database["public"]["Enums"]["hearing_status"]
@@ -230,7 +258,14 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
-          }
+          },
+          {
+            foreignKeyName: "hearing_requests_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
         ]
       }
       interview_sessions: {
@@ -278,7 +313,7 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
       profiles: {
@@ -310,6 +345,41 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      projects: {
+        Row: {
+          company_id: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       recordings: {
         Row: {
@@ -346,7 +416,7 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "interview_sessions"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
     }
@@ -354,11 +424,45 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      can_access_session: {
+        Args: {
+          check_session_id: string
+        }
+        Returns: boolean
+      }
+      is_company_admin: {
+        Args: {
+          check_company_id: string
+        }
+        Returns: boolean
+      }
+      is_company_member: {
+        Args: {
+          check_company_id: string
+        }
+        Returns: boolean
+      }
+      is_company_owner: {
+        Args: {
+          check_company_id: string
+        }
+        Returns: boolean
+      }
+      is_project_member: {
+        Args: {
+          check_project_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       hearing_status: "draft" | "active" | "paused" | "completed" | "archived"
-      session_status: "pending" | "recording" | "interview" | "completed" | "cancelled"
+      session_status:
+        | "pending"
+        | "recording"
+        | "interview"
+        | "completed"
+        | "cancelled"
       user_role: "user" | "company" | "admin"
     }
     CompositeTypes: {
@@ -367,8 +471,100 @@ export type Database = {
   }
 }
 
-// Helper types for easier access
-export type Tables<T extends keyof Database["public"]["Tables"]> = Database["public"]["Tables"][T]["Row"]
-export type TablesInsert<T extends keyof Database["public"]["Tables"]> = Database["public"]["Tables"][T]["Insert"]
-export type TablesUpdate<T extends keyof Database["public"]["Tables"]> = Database["public"]["Tables"][T]["Update"]
-export type Enums<T extends keyof Database["public"]["Enums"]> = Database["public"]["Enums"][T]
+type PublicSchema = Database[Extract<keyof Database, "public">]
+
+export type Tables<
+  PublicTableNameOrOptions extends
+    | keyof (PublicSchema["Tables"] & PublicSchema["Views"])
+    | { schema: keyof Database },
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
+        Database[PublicTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+  ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
+      Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : PublicTableNameOrOptions extends keyof (PublicSchema["Tables"] &
+        PublicSchema["Views"])
+    ? (PublicSchema["Tables"] &
+        PublicSchema["Views"])[PublicTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  PublicTableNameOrOptions extends
+    | keyof PublicSchema["Tables"]
+    | { schema: keyof Database },
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
+    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  PublicTableNameOrOptions extends
+    | keyof PublicSchema["Tables"]
+    | { schema: keyof Database },
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
+    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  PublicEnumNameOrOptions extends
+    | keyof PublicSchema["Enums"]
+    | { schema: keyof Database },
+  EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = PublicEnumNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
+    ? PublicSchema["Enums"][PublicEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof PublicSchema["CompositeTypes"]
+    | { schema: keyof Database },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
+    ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
