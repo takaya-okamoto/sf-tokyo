@@ -22,11 +22,18 @@ export interface SdkEvent {
   timestamp: string;
 }
 
+export interface TodoItem {
+  id: string;
+  content: string;
+  sort_order: number;
+}
+
 export interface ContextResponse {
   sessionId: string;
   status: string;
   returnUrl: string;
   hearingTitle: string | null;
+  todos: TodoItem[];
 }
 
 export interface IngestResponse {

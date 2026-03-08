@@ -1,16 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef, use } from "react";
+import { useState, useEffect, useRef, use, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardContent, Button, Input } from "@repo/ui";
 import { createBrowserClient } from "@/lib/supabase/client";
-import { Send, CheckCircle } from "lucide-react";
-
-interface Message {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-}
+import { Send, CheckCircle, Loader2 } from "lucide-react";
+import { useInterviewChat, getMessageText } from "@/hooks/useInterviewChat";
 
 export default function InterviewPage({
   params,
@@ -19,17 +14,35 @@ export default function InterviewPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
   const [hearingTitle, setHearingTitle] = useState("");
+  const [isCompleting, setIsCompleting] = useState(false);
+  const [needsGreeting, setNeedsGreeting] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const greetingSentRef = useRef(false);
 
+  const handleMessagesLoaded = useCallback(() => {
+    // Check if we need to send initial greeting
+    setNeedsGreeting(true);
+  }, []);
+
+  const {
+    messages,
+    input,
+    handleInputChange,
+    handleSubmit,
+    isLoading,
+    isLoadingHistory,
+    sendMessage,
+  } = useInterviewChat({
+    sessionId: id,
+    onMessagesLoaded: handleMessagesLoaded,
+  });
+
+  // Fetch hearing title
   useEffect(() => {
     const supabase = createBrowserClient();
 
     async function fetchData() {
-      // Fetch session and hearing info
       const { data } = await supabase
         .from("interview_sessions")
         .select(`
@@ -46,138 +59,73 @@ export default function InterviewPage({
       if (session?.hearing_request) {
         setHearingTitle(session.hearing_request.title);
       }
-
-      // Fetch existing messages
-      // Using type assertion to bypass RLS-induced type restrictions
-      const { data: existingMessages } = await (supabase
-        .from("ai_interview_messages") as ReturnType<typeof supabase.from>)
-        .select("*")
-        .eq("session_id", id)
-        .order("created_at", { ascending: true });
-
-      const messages = existingMessages as Array<{
-        id: string;
-        role: string;
-        content: string;
-      }> | null;
-
-      if (messages && messages.length > 0) {
-        setMessages(
-          messages.map((m) => ({
-            id: m.id,
-            role: m.role as "user" | "assistant",
-            content: m.content,
-          }))
-        );
-      } else {
-        // Add initial AI greeting
-        const greeting: Message = {
-          id: "greeting",
-          role: "assistant",
-          content:
-            "Great job! Thank you for trying the service. Let me ask you a few questions.\n\nFirst, what was your overall first impression of the service?",
-        };
-        setMessages([greeting]);
-
-        // Save greeting to DB
-        await (supabase.from("ai_interview_messages") as ReturnType<typeof supabase.from>).insert({
-          session_id: id,
-          role: "assistant",
-          content: greeting.content,
-        } as never);
-      }
     }
 
     fetchData();
   }, [id]);
 
+  // Send initial greeting if no messages exist
+  useEffect(() => {
+    if (
+      needsGreeting &&
+      !isLoadingHistory &&
+      messages.length === 0 &&
+      !greetingSentRef.current
+    ) {
+      greetingSentRef.current = true;
+      // Trigger the AI to send the first message by sending a system trigger
+      sendMessage({ text: "[START_INTERVIEW]" });
+    }
+  }, [needsGreeting, isLoadingHistory, messages.length, sendMessage]);
+
+  // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  async function handleSend() {
-    if (!input.trim() || loading) return;
-
-    const supabase = createBrowserClient();
-    const userMessage: Message = {
-      id: `user-${Date.now()}`,
-      role: "user",
-      content: input.trim(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    setInput("");
-    setLoading(true);
-
-    // Save user message
-    await (supabase.from("ai_interview_messages") as ReturnType<typeof supabase.from>).insert({
-      session_id: id,
-      role: "user",
-      content: userMessage.content,
-    } as never);
-
-    // Simulate AI response (In Phase 2, this will use Vercel AI SDK)
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    const aiResponses = [
-      "I see, thank you. Were there any confusing parts or areas you'd like to see improved?",
-      "That's helpful. Are there any other concerns or, conversely, things you liked?",
-      "Thank you for your feedback. Would you recommend this service to friends or colleagues? Please tell me why.",
-      "Thank you for the detailed feedback. Lastly, do you have any additional comments or feedback?",
-      "Thank you for your valuable feedback! The interview is now complete. Please press the \"Complete\" button.",
-    ];
-
-    const responseIndex = Math.min(
-      messages.filter((m) => m.role === "assistant").length,
-      aiResponses.length - 1
-    );
-
-    const aiMessage: Message = {
-      id: `ai-${Date.now()}`,
-      role: "assistant",
-      content: aiResponses[responseIndex] ?? aiResponses[aiResponses.length - 1] ?? "",
-    };
-
-    setMessages((prev) => [...prev, aiMessage]);
-
-    // Save AI message
-    await (supabase.from("ai_interview_messages") as ReturnType<typeof supabase.from>).insert({
-      session_id: id,
-      role: "assistant",
-      content: aiMessage.content,
-    } as never);
-
-    setLoading(false);
-  }
-
   async function handleComplete() {
-    const supabase = createBrowserClient();
+    setIsCompleting(true);
 
-    // Update session status
-    await (supabase.from("interview_sessions") as ReturnType<typeof supabase.from>)
-      .update({
-        status: "completed",
-        completed_at: new Date().toISOString(),
-      } as never)
-      .eq("id", id);
+    try {
+      // Call summarize API
+      await fetch("/api/interview/summarize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: id }),
+      });
 
-    // Create a simple summary (In Phase 2, this will use AI)
-    const userMessages = messages
-      .filter((m) => m.role === "user")
-      .map((m) => m.content)
-      .join(" ");
+      const supabase = createBrowserClient();
 
-    await (supabase.from("ai_interview_summaries") as ReturnType<typeof supabase.from>).insert({
-      session_id: id,
-      summary: `User provided the following feedback: ${userMessages.substring(0, 500)}...`,
-      key_insights: ["Feedback collection completed"],
-    } as never);
+      // Update session status
+      await (supabase.from("interview_sessions") as ReturnType<typeof supabase.from>)
+        .update({
+          status: "completed",
+          completed_at: new Date().toISOString(),
+        } as never)
+        .eq("id", id);
 
-    router.push("/history");
+      router.push("/history");
+    } catch (error) {
+      console.error("Failed to complete interview:", error);
+      setIsCompleting(false);
+    }
   }
 
-  const userMessageCount = messages.filter((m) => m.role === "user").length;
-  const canEndInterview = userMessageCount >= 5;
+  // Filter out the system trigger message for display
+  const displayMessages = messages.filter(
+    (m) => getMessageText(m) !== "[START_INTERVIEW]"
+  );
+
+  const userMessageCount = displayMessages.filter((m) => m.role === "user").length;
+  const canEndInterview = userMessageCount >= 1;
+
+  if (isLoadingHistory) {
+    return (
+      <div className="max-w-4xl mx-auto flex items-center justify-center h-96">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -194,7 +142,7 @@ export default function InterviewPage({
             <CardTitle className="text-lg">Chat</CardTitle>
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.map((message) => (
+            {displayMessages.map((message) => (
               <div
                 key={message.id}
                 className={`flex ${
@@ -208,11 +156,11 @@ export default function InterviewPage({
                       : "bg-primary text-primary-foreground"
                   }`}
                 >
-                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                  <p className="text-sm whitespace-pre-wrap">{getMessageText(message)}</p>
                 </div>
               </div>
             ))}
-            {loading && (
+            {isLoading && (
               <div className="flex justify-start">
                 <div className="bg-muted rounded-lg p-3">
                   <div className="flex gap-1">
@@ -226,20 +174,14 @@ export default function InterviewPage({
             <div ref={messagesEndRef} />
           </CardContent>
           <div className="p-4 border-t">
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleSend();
-              }}
-              className="flex gap-2"
-            >
+            <form onSubmit={handleSubmit} className="flex gap-2">
               <Input
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={handleInputChange}
                 placeholder="Type a message..."
-                disabled={loading}
+                disabled={isLoading}
               />
-              <Button type="submit" disabled={loading || !input.trim()}>
+              <Button type="submit" disabled={isLoading || !input.trim()}>
                 <Send className="h-4 w-4" />
               </Button>
             </form>
@@ -256,8 +198,8 @@ export default function InterviewPage({
                 <p>You can end the interview whenever you&apos;re ready.</p>
               ) : (
                 <p>
-                  Please answer at least {5 - userMessageCount} more question
-                  {5 - userMessageCount !== 1 ? "s" : ""} before ending.
+                  Please answer at least {1 - userMessageCount} more question
+                  {1 - userMessageCount !== 1 ? "s" : ""} before ending.
                 </p>
               )}
             </div>
@@ -265,10 +207,14 @@ export default function InterviewPage({
               variant="outline"
               className="w-full"
               onClick={handleComplete}
-              disabled={!canEndInterview}
+              disabled={!canEndInterview || isCompleting}
             >
-              <CheckCircle className="h-5 w-5 mr-2" />
-              End Interview
+              {isCompleting ? (
+                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+              ) : (
+                <CheckCircle className="h-5 w-5 mr-2" />
+              )}
+              {isCompleting ? "Completing..." : "End Interview"}
             </Button>
           </CardContent>
         </Card>

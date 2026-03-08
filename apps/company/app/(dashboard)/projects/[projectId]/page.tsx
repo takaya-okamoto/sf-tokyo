@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
 import { Button } from "@repo/ui";
-import { Plus, Settings } from "lucide-react";
+import { Plus, Settings, Code, ArrowRight } from "lucide-react";
 
 type HearingRow = {
   id: string;
@@ -117,6 +117,31 @@ export default async function ProjectDashboardPage({
               </Button>
             </Link>
           )}
+        </div>
+      </div>
+
+      {/* SDK Setup Banner */}
+      <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
+              <Code className="h-5 w-5 text-blue-600" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-blue-900">
+                Set up the JS SDK
+              </h3>
+              <p className="text-sm text-blue-700">
+                Install the SDK to automatically track user behavior on your website
+              </p>
+            </div>
+          </div>
+          <Link href={`/projects/${projectId}/settings`}>
+            <Button className="bg-blue-600 hover:bg-blue-700">
+              Go to Settings
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </Link>
         </div>
       </div>
 

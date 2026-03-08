@@ -88,7 +88,10 @@ export default async function HearingDetailPage({
     recording_type: string;
     storage_path: string;
     duration: number | null;
+    signedUrl: string | null;
   }>> = {};
+
+  const SIGNED_URL_EXPIRY_SECONDS = 3600; // 1時間
 
   if (sessionIds.length > 0) {
     const { data: recordingsData } = await (supabase
@@ -104,7 +107,23 @@ export default async function HearingDetailPage({
       duration: number | null;
     }> | null) ?? [];
 
-    for (const r of recordings) {
+    // 並列で署名付きURLを生成（パフォーマンス最適化）
+    const recordingsWithSignedUrls = await Promise.all(
+      recordings.map(async (r) => {
+        const { data: signedUrlData, error } = await supabase
+          .storage
+          .from("recordings")
+          .createSignedUrl(r.storage_path, SIGNED_URL_EXPIRY_SECONDS);
+
+        return {
+          ...r,
+          signedUrl: error ? null : signedUrlData?.signedUrl ?? null,
+        };
+      })
+    );
+
+    // セッションごとにグループ化
+    for (const r of recordingsWithSignedUrls) {
       if (!recordingsBySession[r.session_id]) {
         recordingsBySession[r.session_id] = [];
       }
@@ -113,6 +132,7 @@ export default async function HearingDetailPage({
         recording_type: r.recording_type,
         storage_path: r.storage_path,
         duration: r.duration,
+        signedUrl: r.signedUrl,
       });
     }
   }
@@ -140,6 +160,42 @@ export default async function HearingDetailPage({
         summary: s.summary,
         key_insights: s.key_insights,
       };
+    }
+  }
+
+  // Get AI interview messages for all sessions
+  let messagesBySession: Record<string, Array<{
+    id: string;
+    role: string;
+    content: string;
+    created_at: string;
+  }>> = {};
+
+  if (sessionIds.length > 0) {
+    const { data: messagesData } = await (supabase
+      .from("ai_interview_messages") as ReturnType<typeof supabase.from>)
+      .select("id, session_id, role, content, created_at")
+      .in("session_id", sessionIds)
+      .order("created_at", { ascending: true });
+
+    const messages = (messagesData as Array<{
+      id: string;
+      session_id: string;
+      role: string;
+      content: string;
+      created_at: string;
+    }> | null) ?? [];
+
+    for (const m of messages) {
+      if (!messagesBySession[m.session_id]) {
+        messagesBySession[m.session_id] = [];
+      }
+      messagesBySession[m.session_id]!.push({
+        id: m.id,
+        role: m.role,
+        content: m.content,
+        created_at: m.created_at,
+      });
     }
   }
 
@@ -231,6 +287,7 @@ export default async function HearingDetailPage({
       recordings: recordingsBySession[s.id] ?? [],
       summary: summariesBySession[s.id] ?? null,
       surveyResponses: surveyResponsesBySession[s.id] ?? [],
+      messages: messagesBySession[s.id] ?? [],
     };
   });
 

@@ -70,6 +70,20 @@ Deno.serve(async (req) => {
       })
       .eq("id", sessionId);
 
+    // interview_todosを取得
+    const hearingRequestId = session.hearing_request?.id;
+    let todos: { id: string; content: string; sort_order: number }[] = [];
+
+    if (hearingRequestId) {
+      const { data: todosData } = await supabase
+        .from("interview_todos")
+        .select("id, content, sort_order")
+        .eq("hearing_request_id", hearingRequestId)
+        .order("sort_order", { ascending: true });
+
+      todos = todosData || [];
+    }
+
     const returnUrl = `${userAppUrl}/session/${sessionId}/recording`;
 
     return new Response(
@@ -78,6 +92,7 @@ Deno.serve(async (req) => {
         status: session.status,
         returnUrl,
         hearingTitle: session.hearing_request?.title || null,
+        todos,
       }),
       {
         status: 200,

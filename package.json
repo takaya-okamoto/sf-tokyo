@@ -16,9 +16,14 @@
     "functions:deploy": "supabase functions deploy"
   },
   "devDependencies": {
+    "@octokit/app": "^16.1.2",
+    "@octokit/auth-app": "^8.2.0",
+    "@octokit/rest": "^22.0.1",
     "concurrently": "^9.2.1",
+    "octokit": "^5.0.5",
     "prettier": "^3.2.5",
     "supabase": "^1.226.4",
+    "tsx": "^4.21.0",
     "turbo": "^2.3.0",
     "typescript": "^5.7.2"
   },

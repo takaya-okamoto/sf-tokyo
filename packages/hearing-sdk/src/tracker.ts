@@ -1,10 +1,11 @@
-import type { HearingSDKConfig, SdkEvent } from "./types";
+import type { HearingSDKConfig, SdkEvent, TodoItem } from "./types";
 import { ApiClient } from "./api/client";
 import { createClickHandler } from "./events/click";
 import { createScrollHandler } from "./events/scroll";
 import { createVisibilityHandler } from "./events/visibility";
 import { createFloatingButton, removeFloatingButton } from "./ui/floating-button";
 import { showRecordingIndicator, removeRecordingIndicator } from "./ui/recording-indicator";
+import { createTaskPanel, removeTaskPanel } from "./ui/task-panel";
 
 export class InterviewTracker {
   private config: Required<HearingSDKConfig>;
@@ -14,6 +15,7 @@ export class InterviewTracker {
   private flushIntervalId: ReturnType<typeof setInterval> | null = null;
   private initialized: boolean = false;
   private returnUrl: string = "";
+  private todos: TodoItem[] = [];
 
   private clickHandler: ((e: MouseEvent) => void) | null = null;
   private scrollHandler: (() => void) | null = null;
@@ -63,6 +65,7 @@ export class InterviewTracker {
     }
 
     this.returnUrl = context.returnUrl;
+    this.todos = context.todos || [];
     this.startTime = Date.now();
 
     // イベントハンドラーのセットアップ
@@ -107,6 +110,16 @@ export class InterviewTracker {
   }
 
   private showFloatingButton() {
+    // タスクパネルを表示（タスクがある場合のみ）
+    if (this.todos.length > 0) {
+      const taskPanel = createTaskPanel({
+        todos: this.todos,
+        position: this.config.buttonPosition,
+      });
+      document.body.appendChild(taskPanel);
+    }
+
+    // フローティングボタンを表示
     const button = createFloatingButton({
       text: this.config.buttonText,
       position: this.config.buttonPosition,
@@ -169,6 +182,7 @@ export class InterviewTracker {
     }
 
     removeFloatingButton();
+    removeTaskPanel();
     removeRecordingIndicator();
     this.initialized = false;
   }

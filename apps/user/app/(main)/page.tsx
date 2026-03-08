@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createServerClient } from "@/lib/supabase/server";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Button } from "@repo/ui";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter, Button } from "@repo/ui";
 import { Clock, Gift } from "lucide-react";
 
 export default async function HomePage() {
@@ -19,7 +19,6 @@ export default async function HomePage() {
   const hearings = hearingsData as Array<{
     id: string;
     title: string;
-    description: string | null;
     target_url: string;
     reward_amount: number | null;
     reward_type: string | null;
@@ -54,9 +53,6 @@ export default async function HomePage() {
                 </div>
               </CardHeader>
               <CardContent className="flex-1 space-y-4">
-                <CardDescription className="line-clamp-3">
-                  {hearing.description || "No description"}
-                </CardDescription>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Clock className="h-4 w-4" />

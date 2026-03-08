@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, Button } from "@repo/ui";
-import { ArrowLeft, ExternalLink, Clock, Gift, CheckCircle2, ListTodo } from "lucide-react";
+import { ArrowLeft, ExternalLink, Clock, Gift, CheckCircle2, ListTodo, Users } from "lucide-react";
 
 export default async function RequestDetailPage({
   params,
@@ -64,6 +64,23 @@ export default async function RequestDetailPage({
     content: string;
     sort_order: number;
   }[];
+
+  // Fetch interview persona
+  const { data: personaData } = await (supabase
+    .from("interview_personas") as ReturnType<typeof supabase.from>)
+    .select("*")
+    .eq("hearing_request_id", id)
+    .single();
+
+  const persona = personaData as {
+    id: string;
+    age_min: number | null;
+    age_max: number | null;
+    gender: string | null;
+    occupation: string | null;
+    country: string | null;
+    details: string | null;
+  } | null;
 
   async function startSession() {
     "use server";
@@ -167,6 +184,53 @@ export default async function RequestDetailPage({
                 <p className="text-muted-foreground text-sm">
                   No specific preparation or tasks defined for this interview.
                 </p>
+              )}
+
+              {/* Target Participant */}
+              {persona && (
+                <div>
+                  <h3 className="font-medium mb-3 flex items-center gap-2">
+                    <Users className="h-4 w-4 text-purple-600" />
+                    Target Participant
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    {(persona.age_min !== null || persona.age_max !== null) && (
+                      <div className="bg-muted/50 rounded-lg p-3">
+                        <p className="text-xs text-muted-foreground mb-1">Age Range</p>
+                        <p className="text-sm font-medium">
+                          {persona.age_min !== null && persona.age_max !== null
+                            ? `${persona.age_min} - ${persona.age_max} years old`
+                            : persona.age_min !== null
+                              ? `${persona.age_min}+ years old`
+                              : `Under ${persona.age_max} years old`}
+                        </p>
+                      </div>
+                    )}
+                    {persona.gender && (
+                      <div className="bg-muted/50 rounded-lg p-3">
+                        <p className="text-xs text-muted-foreground mb-1">Gender</p>
+                        <p className="text-sm font-medium capitalize">{persona.gender}</p>
+                      </div>
+                    )}
+                    {persona.country && (
+                      <div className="bg-muted/50 rounded-lg p-3">
+                        <p className="text-xs text-muted-foreground mb-1">Country</p>
+                        <p className="text-sm font-medium">{persona.country}</p>
+                      </div>
+                    )}
+                    {persona.occupation && (
+                      <div className="bg-muted/50 rounded-lg p-3">
+                        <p className="text-xs text-muted-foreground mb-1">Occupation</p>
+                        <p className="text-sm font-medium">{persona.occupation}</p>
+                      </div>
+                    )}
+                  </div>
+                  {persona.details && (
+                    <p className="text-sm text-muted-foreground mt-3">
+                      {persona.details}
+                    </p>
+                  )}
+                </div>
               )}
             </CardContent>
           </Card>

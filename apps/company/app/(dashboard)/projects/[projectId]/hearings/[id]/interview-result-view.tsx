@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Button, Card, CardContent, CardHeader, CardTitle, cn } from "@repo/ui";
-import { ArrowLeft, User, ClipboardList, FileText, Play, BarChart3, ListFilter, Sparkles, X, Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, User, ClipboardList, FileText, Play, BarChart3, ListFilter, Sparkles, X, Loader2, ChevronDown, ChevronUp, MessageSquare, ExternalLink } from "lucide-react";
 
 // --- Types ---
 
@@ -12,6 +12,7 @@ type Recording = {
   recording_type: string;
   storage_path: string;
   duration: number | null;
+  signedUrl: string | null;
 };
 
 type Summary = {
@@ -27,6 +28,13 @@ type SurveyResponse = {
   selected_labels: string[];
 };
 
+type ChatMessage = {
+  id: string;
+  role: string;
+  content: string;
+  created_at: string;
+};
+
 type SessionDetail = {
   id: string;
   userId: string;
@@ -39,6 +47,7 @@ type SessionDetail = {
   recordings: Recording[];
   summary: Summary | null;
   surveyResponses: SurveyResponse[];
+  messages: ChatMessage[];
 };
 
 type Hearing = {
@@ -191,14 +200,21 @@ function RecordingSection({ recordings }: { recordings: Recording[] }) {
       <CardContent className="space-y-3">
         {/* Main screen recording */}
         <div className="aspect-video bg-black rounded-lg overflow-hidden">
-          <video
-            className="w-full h-full"
-            controls
-            src={screenRecording?.storage_path}
-            poster=""
-          >
-            Your browser does not support the video tag.
-          </video>
+          {screenRecording?.signedUrl ? (
+            <video
+              className="w-full h-full"
+              controls
+              src={screenRecording.signedUrl}
+            >
+              Your browser does not support the video tag.
+            </video>
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <p className="text-sm text-muted-foreground">
+                {screenRecording ? "Unable to load recording" : "No screen recording"}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Other recordings (e.g., webcam) */}
@@ -210,13 +226,21 @@ function RecordingSection({ recordings }: { recordings: Recording[] }) {
                   {rec.recording_type}
                 </p>
                 <div className="aspect-video bg-black rounded-md overflow-hidden">
-                  <video
-                    className="w-full h-full"
-                    controls
-                    src={rec.storage_path}
-                  >
-                    Your browser does not support the video tag.
-                  </video>
+                  {rec.signedUrl ? (
+                    <video
+                      className="w-full h-full"
+                      controls
+                      src={rec.signedUrl}
+                    >
+                      Your browser does not support the video tag.
+                    </video>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <p className="text-xs text-muted-foreground">
+                        Unable to load
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -316,6 +340,68 @@ function SurveySection({
   );
 }
 
+function ChatSection({ messages }: { messages: ChatMessage[] }) {
+  // Filter out system messages like [START_INTERVIEW]
+  const filteredMessages = messages.filter(
+    (m) => !m.content.includes("[START_INTERVIEW]")
+  );
+
+  if (filteredMessages.length === 0) {
+    return (
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <MessageSquare className="h-4 w-4" />
+            Chat History
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">No chat history</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          <MessageSquare className="h-4 w-4" />
+          Chat History
+          <span className="text-xs font-normal text-muted-foreground">
+            ({filteredMessages.length})
+          </span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3 max-h-96 overflow-y-auto">
+          {filteredMessages.map((message) => (
+            <div
+              key={message.id}
+              className={`flex ${
+                message.role === "assistant" ? "justify-start" : "justify-end"
+              }`}
+            >
+              <div
+                className={`max-w-[80%] rounded-lg p-3 ${
+                  message.role === "assistant"
+                    ? "bg-muted"
+                    : "bg-primary text-primary-foreground"
+                }`}
+              >
+                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                <p className="text-xs mt-1 opacity-70">
+                  {new Date(message.created_at).toLocaleTimeString("ja-JP")}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 // --- AI Improvement Tasks ---
 
 const MAX_VISIBLE_TASKS = 3;
@@ -387,12 +473,14 @@ function generateTasksFromInsights(insights: string[]): ImprovementTask[] {
   }));
 }
 
-function AIImprovementTasks({ insights }: { insights: string[] }) {
+function AIImprovementTasks({ insights, hearingId }: { insights: string[]; hearingId: string }) {
   const [allTasks, setAllTasks] = useState<ImprovementTask[]>(() =>
     generateTasksFromInsights(insights)
   );
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [fixingIds, setFixingIds] = useState<Set<string>>(new Set());
+  const [createdPRs, setCreatedPRs] = useState<Record<string, { prUrl: string; prNumber: number }>>({});
+  const [errorIds, setErrorIds] = useState<Set<string>>(new Set());
 
   const visibleTasks = allTasks
     .filter((t) => !t.dismissed)
@@ -406,17 +494,47 @@ function AIImprovementTasks({ insights }: { insights: string[] }) {
     if (expandedId === id) setExpandedId(null);
   }
 
-  function fixWithAI(id: string) {
+  async function fixWithAI(task: ImprovementTask) {
+    const { id } = task;
     setFixingIds((prev) => new Set(prev).add(id));
-    // Simulate AI processing - in production this would call an API
-    setTimeout(() => {
+    setErrorIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+
+    try {
+      const response = await fetch("/api/github/create-pr", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          taskId: id,
+          taskContent: task.content,
+          taskReason: task.reason,
+          hearingId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to create PR");
+      }
+
+      setCreatedPRs((prev) => ({
+        ...prev,
+        [id]: { prUrl: data.prUrl, prNumber: data.prNumber },
+      }));
+    } catch (error) {
+      console.error("Failed to create PR:", error);
+      setErrorIds((prev) => new Set(prev).add(id));
+    } finally {
       setFixingIds((prev) => {
         const next = new Set(prev);
         next.delete(id);
         return next;
       });
-      dismissTask(id);
-    }, 2000);
+    }
   }
 
   if (visibleTasks.length === 0) return null;
@@ -439,6 +557,8 @@ function AIImprovementTasks({ insights }: { insights: string[] }) {
           {visibleTasks.map((task) => {
             const isExpanded = expandedId === task.id;
             const isFixing = fixingIds.has(task.id);
+            const hasError = errorIds.has(task.id);
+            const createdPR = createdPRs[task.id];
             return (
               <div
                 key={task.id}
@@ -468,23 +588,37 @@ function AIImprovementTasks({ insights }: { insights: string[] }) {
                   </button>
 
                   <div className="flex items-center gap-1 shrink-0">
-                    <button
-                      onClick={() => fixWithAI(task.id)}
-                      disabled={isFixing}
-                      className={cn(
-                        "inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md transition-colors",
-                        isFixing
-                          ? "bg-muted text-muted-foreground cursor-not-allowed"
-                          : "bg-primary/10 text-primary hover:bg-primary/20"
-                      )}
-                    >
-                      {isFixing ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
-                        <Sparkles className="h-3 w-3" />
-                      )}
-                      {isFixing ? "Fixing..." : "Fix with AI"}
-                    </button>
+                    {createdPR ? (
+                      <a
+                        href={createdPR.prUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-green-100 text-green-700 hover:bg-green-200 transition-colors"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        PR #{createdPR.prNumber}
+                      </a>
+                    ) : (
+                      <button
+                        onClick={() => fixWithAI(task)}
+                        disabled={isFixing}
+                        className={cn(
+                          "inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md transition-colors",
+                          isFixing
+                            ? "bg-muted text-muted-foreground cursor-not-allowed"
+                            : hasError
+                              ? "bg-red-100 text-red-700 hover:bg-red-200"
+                              : "bg-primary/10 text-primary hover:bg-primary/20"
+                        )}
+                      >
+                        {isFixing ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Sparkles className="h-3 w-3" />
+                        )}
+                        {isFixing ? "Creating PR..." : hasError ? "Retry" : "Fix with AI"}
+                      </button>
+                    )}
                     <button
                       onClick={() => dismissTask(task.id)}
                       className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
@@ -533,7 +667,7 @@ function AIImprovementTasks({ insights }: { insights: string[] }) {
 
 // --- Overview Panel ---
 
-function OverviewPanel({ sessions }: { sessions: SessionDetail[] }) {
+function OverviewPanel({ sessions, hearing }: { sessions: SessionDetail[]; hearing: Hearing }) {
   const completed = sessions.filter((s) => s.status === "completed");
   const inProgress = sessions.filter(
     (s) => s.status === "recording" || s.status === "interview"
@@ -633,7 +767,7 @@ function OverviewPanel({ sessions }: { sessions: SessionDetail[] }) {
 
       {/* AI Suggested Improvements */}
       {allInsights.length > 0 && (
-        <AIImprovementTasks insights={allInsights} />
+        <AIImprovementTasks insights={allInsights} hearingId={hearing.id} />
       )}
 
       {/* Key Insights (aggregated from all summaries) */}
@@ -907,7 +1041,7 @@ export function InterviewResultView({
           {/* Right: Content */}
           <div className="flex-1 min-w-0 space-y-4">
             {isOverview ? (
-              <OverviewPanel sessions={sessions} />
+              <OverviewPanel sessions={sessions} hearing={hearing} />
             ) : selectedSession ? (
               <>
                 {/* User header */}
@@ -937,6 +1071,9 @@ export function InterviewResultView({
                 {selectedSession.summary && (
                   <SummarySection summary={selectedSession.summary} />
                 )}
+
+                {/* Chat History */}
+                <ChatSection messages={selectedSession.messages} />
 
                 {/* Pre-Survey */}
                 <SurveySection

@@ -95,6 +95,84 @@ export const FLOATING_BUTTON_STYLES = `
     box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
   }
 }
+
+.hearing-sdk-task-panel {
+  position: fixed;
+  z-index: 999998;
+  width: 280px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  overflow: hidden;
+}
+
+.hearing-sdk-task-panel.bottom-right {
+  bottom: 90px;
+  right: 24px;
+}
+
+.hearing-sdk-task-panel.bottom-left {
+  bottom: 90px;
+  left: 24px;
+}
+
+.hearing-sdk-task-panel-header {
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.hearing-sdk-task-panel-list {
+  list-style: none;
+  margin: 0;
+  padding: 8px 0;
+}
+
+.hearing-sdk-task-panel-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.hearing-sdk-task-panel-item:hover {
+  background: #f5f5f5;
+}
+
+.hearing-sdk-task-panel-checkbox {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #d1d5db;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: transparent;
+  transition: all 0.15s ease;
+}
+
+.hearing-sdk-task-panel-item.completed .hearing-sdk-task-panel-checkbox {
+  background: #6366f1;
+  border-color: #6366f1;
+  color: white;
+}
+
+.hearing-sdk-task-panel-content {
+  font-size: 13px;
+  color: #374151;
+  line-height: 1.4;
+}
+
+.hearing-sdk-task-panel-item.completed .hearing-sdk-task-panel-content {
+  text-decoration: line-through;
+  color: #9ca3af;
+}
 `;
 
 export function injectStyles() {
