@@ -2,7 +2,14 @@
   "permissions": {
     "allow": [
       "WebSearch",
-      "Bash(pnpm build:*)"
+      "Bash(pnpm build:*)",
+      "Bash(tree:*)",
+      "Bash(ls:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(git add:*)",
+      "Bash(grep:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nchore: Update local settings and documentation\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push:*)"
     ]
   }
 }

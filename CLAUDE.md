@@ -10,7 +10,7 @@ A user hearing/feedback platform where companies collect user feedback through s
 
 ```bash
 # Development
-pnpm dev              # Start both apps (company:3001, user:3002)
+pnpm dev              # Start both apps (company.localhost:3001, user.localhost:3002)
 pnpm build            # Build all apps with Turbo caching
 pnpm lint             # Lint entire monorepo
 pnpm format           # Prettier format
@@ -64,8 +64,8 @@ Both apps use `middleware.ts` calling `updateSession()` from `@repo/supabase` fo
 
 | Service | URL |
 |---------|-----|
-| Company App | http://localhost:3001 |
-| User App | http://localhost:3002 |
+| Company App | http://company.localhost:3001 |
+| User App | http://user.localhost:3002 |
 | Supabase API | http://localhost:54321 |
 | Supabase Studio | http://localhost:54323 |
 | Email Testing | http://localhost:54324 |

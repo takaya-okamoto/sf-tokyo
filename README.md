@@ -96,15 +96,15 @@ SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 pnpm dev
 ```
 
-- **企業向けアプリ**: http://localhost:3001
-- **ユーザー向けアプリ**: http://localhost:3002
+- **企業向けアプリ**: http://company.localhost:3001
+- **ユーザー向けアプリ**: http://user.localhost:3002
 - **Supabase Studio**: http://localhost:54323
 
 ## アカウント登録とサインイン
 
 ### 企業アカウント
 
-1. http://localhost:3001/signup にアクセス
+1. http://company.localhost:3001/signup にアクセス
 2. 以下の情報を入力：
    - 会社名
    - メールアドレス
@@ -114,7 +114,7 @@ pnpm dev
 
 ### ユーザーアカウント
 
-1. http://localhost:3002/signup にアクセス
+1. http://user.localhost:3002/signup にアクセス
 2. 以下の情報を入力：
    - 表示名
    - メールアドレス
@@ -124,8 +124,8 @@ pnpm dev
 
 ### サインイン
 
-- **企業**: http://localhost:3001/login
-- **ユーザー**: http://localhost:3002/login
+- **企業**: http://company.localhost:3001/login
+- **ユーザー**: http://user.localhost:3002/login
 
 メールアドレスとパスワードでログインできます。
 
@@ -138,7 +138,7 @@ pnpm dev
 
 ## 主な機能
 
-### 企業向けアプリ (localhost:3001)
+### 企業向けアプリ (company.localhost:3001)
 
 | ページ | 説明 |
 |--------|------|
@@ -152,7 +152,7 @@ pnpm dev
 | `/settings` | 企業設定 |
 | `/settings/team` | チームメンバー管理 |
 
-### ユーザー向けアプリ (localhost:3000)
+### ユーザー向けアプリ (user.localhost:3002)
 
 | ページ | 説明 |
 |--------|------|
