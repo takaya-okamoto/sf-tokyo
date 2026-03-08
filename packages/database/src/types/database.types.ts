@@ -210,45 +210,54 @@ export type Database = {
           company_id: string
           created_at: string
           description: string | null
+          estimated_duration: number | null
           id: string
           instructions: string | null
           max_participants: number | null
           project_id: string | null
           reward_amount: number | null
+          reward_per_user: number | null
           reward_type: string | null
           status: Database["public"]["Enums"]["hearing_status"]
           target_url: string
           title: string
+          total_budget_cap: number | null
           updated_at: string
         }
         Insert: {
           company_id: string
           created_at?: string
           description?: string | null
+          estimated_duration?: number | null
           id?: string
           instructions?: string | null
           max_participants?: number | null
           project_id?: string | null
           reward_amount?: number | null
+          reward_per_user?: number | null
           reward_type?: string | null
           status?: Database["public"]["Enums"]["hearing_status"]
           target_url: string
           title: string
+          total_budget_cap?: number | null
           updated_at?: string
         }
         Update: {
           company_id?: string
           created_at?: string
           description?: string | null
+          estimated_duration?: number | null
           id?: string
           instructions?: string | null
           max_participants?: number | null
           project_id?: string | null
           reward_amount?: number | null
+          reward_per_user?: number | null
           reward_type?: string | null
           status?: Database["public"]["Enums"]["hearing_status"]
           target_url?: string
           title?: string
+          total_budget_cap?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -264,6 +273,82 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      interview_personas: {
+        Row: {
+          age_max: number | null
+          age_min: number | null
+          created_at: string
+          details: string | null
+          gender: string | null
+          hearing_request_id: string
+          id: string
+          occupation: string | null
+          updated_at: string
+        }
+        Insert: {
+          age_max?: number | null
+          age_min?: number | null
+          created_at?: string
+          details?: string | null
+          gender?: string | null
+          hearing_request_id: string
+          id?: string
+          occupation?: string | null
+          updated_at?: string
+        }
+        Update: {
+          age_max?: number | null
+          age_min?: number | null
+          created_at?: string
+          details?: string | null
+          gender?: string | null
+          hearing_request_id?: string
+          id?: string
+          occupation?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_personas_hearing_request_id_fkey"
+            columns: ["hearing_request_id"]
+            isOneToOne: true
+            referencedRelation: "hearing_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      interview_preparations: {
+        Row: {
+          content: string
+          created_at: string
+          hearing_request_id: string
+          id: string
+          sort_order: number
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          hearing_request_id: string
+          id?: string
+          sort_order?: number
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          hearing_request_id?: string
+          id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_preparations_hearing_request_id_fkey"
+            columns: ["hearing_request_id"]
+            isOneToOne: false
+            referencedRelation: "hearing_requests"
             referencedColumns: ["id"]
           },
         ]
@@ -318,6 +403,38 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      interview_todos: {
+        Row: {
+          content: string
+          created_at: string
+          hearing_request_id: string
+          id: string
+          sort_order: number
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          hearing_request_id: string
+          id?: string
+          sort_order?: number
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          hearing_request_id?: string
+          id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_todos_hearing_request_id_fkey"
+            columns: ["hearing_request_id"]
+            isOneToOne: false
+            referencedRelation: "hearing_requests"
             referencedColumns: ["id"]
           },
         ]
@@ -487,14 +604,171 @@ export type Database = {
           },
         ]
       }
+      survey_question_options: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          question_id: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          question_id: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          question_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_question_options_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "survey_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      survey_questions: {
+        Row: {
+          created_at: string
+          hearing_request_id: string
+          id: string
+          phase: Database["public"]["Enums"]["survey_phase"]
+          question: string
+          question_type: Database["public"]["Enums"]["survey_question_type"]
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          hearing_request_id: string
+          id?: string
+          phase: Database["public"]["Enums"]["survey_phase"]
+          question: string
+          question_type?: Database["public"]["Enums"]["survey_question_type"]
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          hearing_request_id?: string
+          id?: string
+          phase?: Database["public"]["Enums"]["survey_phase"]
+          question?: string
+          question_type?: Database["public"]["Enums"]["survey_question_type"]
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_questions_hearing_request_id_fkey"
+            columns: ["hearing_request_id"]
+            isOneToOne: false
+            referencedRelation: "hearing_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      survey_response_selections: {
+        Row: {
+          created_at: string
+          id: string
+          option_id: string
+          response_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          option_id: string
+          response_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          option_id?: string
+          response_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_response_selections_option_id_fkey"
+            columns: ["option_id"]
+            isOneToOne: false
+            referencedRelation: "survey_question_options"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "survey_response_selections_response_id_fkey"
+            columns: ["response_id"]
+            isOneToOne: false
+            referencedRelation: "survey_responses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      survey_responses: {
+        Row: {
+          created_at: string
+          id: string
+          question_id: string
+          session_id: string
+          text_value: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          question_id: string
+          session_id: string
+          text_value?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          question_id?: string
+          session_id?: string
+          text_value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_responses_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "survey_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "survey_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "interview_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      can_access_hearing: {
+        Args: {
+          check_hearing_id: string
+        }
+        Returns: boolean
+      }
       can_access_session: {
         Args: {
           check_session_id: string
+        }
+        Returns: boolean
+      }
+      can_access_survey_question: {
+        Args: {
+          check_question_id: string
         }
         Returns: boolean
       }
@@ -516,9 +790,21 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_hearing_company_member: {
+        Args: {
+          check_hearing_id: string
+        }
+        Returns: boolean
+      }
       is_project_member: {
         Args: {
           check_project_id: string
+        }
+        Returns: boolean
+      }
+      is_survey_question_company_member: {
+        Args: {
+          check_question_id: string
         }
         Returns: boolean
       }
@@ -531,6 +817,8 @@ export type Database = {
         | "interview"
         | "completed"
         | "cancelled"
+      survey_phase: "pre_survey" | "feedback"
+      survey_question_type: "text" | "radio" | "checkbox"
       user_role: "user" | "company" | "admin"
     }
     CompositeTypes: {

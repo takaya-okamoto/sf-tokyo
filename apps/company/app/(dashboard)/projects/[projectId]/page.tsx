@@ -86,7 +86,7 @@ export default async function ProjectDashboardPage({
           <Link href={`/projects/${projectId}/hearings/new`}>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
-              New Hearing
+              Create New Interview
             </Button>
           </Link>
         </div>
@@ -214,7 +214,7 @@ export default async function ProjectDashboardPage({
             <Link href={`/projects/${projectId}/hearings/new`} className="block">
               <Button variant="outline" className="w-full justify-start">
                 <Plus className="h-4 w-4 mr-2" />
-                Create New Hearing
+                Create New Interview
               </Button>
             </Link>
             <Link href={`/projects/${projectId}/settings`} className="block">

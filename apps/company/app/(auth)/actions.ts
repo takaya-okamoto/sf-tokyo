@@ -98,7 +98,12 @@ export async function createFirstProject(formData: FormData) {
   const adminClient = createAdminClient();
 
   const name = formData.get("name") as string;
-  const description = (formData.get("description") as string) || null;
+  const purpose = (formData.get("purpose") as string) || "";
+  const targetUsers = (formData.get("targetUsers") as string) || "";
+  const description =
+    purpose || targetUsers
+      ? `【目的】${purpose}\n【想定ユーザー】${targetUsers}`
+      : null;
 
   const {
     data: { user },

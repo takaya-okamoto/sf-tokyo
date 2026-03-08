@@ -29,6 +29,9 @@ export default async function HearingDetailPage({
     reward_amount: number | null;
     reward_type: string | null;
     max_participants: number | null;
+    estimated_duration: number | null;
+    reward_per_user: number | null;
+    total_budget_cap: number | null;
     created_at: string;
     updated_at: string;
   } | null;
