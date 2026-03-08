@@ -75,7 +75,7 @@ Deno.serve(async (req) => {
       })
       .eq("id", sessionId);
 
-    const returnUrl = `${userAppUrl}/session/${sessionId}/recording`;
+    const returnUrl = `${userAppUrl}/session/${sessionId}/recording?action=stop`;
 
     return new Response(
       JSON.stringify({ success: true, returnUrl }),
