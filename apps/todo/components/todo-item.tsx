@@ -16,9 +16,9 @@ const urgencyStyles = {
 };
 
 const urgencyLabels = {
-  high: "High",
-  medium: "Medium",
-  low: "Low",
+  high: "緊急",
+  medium: "中",
+  low: "低",
 };
 
 const urgencyBadgeStyles = {
