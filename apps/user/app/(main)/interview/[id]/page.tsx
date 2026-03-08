@@ -176,12 +176,11 @@ export default function InterviewPage({
     router.push("/history");
   }
 
-  const isComplete = messages.some((m) =>
-    m.content.includes("The interview is now complete")
-  );
+  const userMessageCount = messages.filter((m) => m.role === "user").length;
+  const canEndInterview = userMessageCount >= 5;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6">
       <div>
         <h1 className="text-2xl font-bold">{hearingTitle}</h1>
         <p className="text-muted-foreground">
@@ -189,49 +188,44 @@ export default function InterviewPage({
         </p>
       </div>
 
-      <Card className="h-[500px] flex flex-col">
-        <CardHeader className="border-b">
-          <CardTitle className="text-lg">Chat</CardTitle>
-        </CardHeader>
-        <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex ${
-                message.role === "assistant" ? "justify-start" : "justify-end"
-              }`}
-            >
+      <div className="flex gap-4">
+        <Card className="h-[500px] flex flex-col flex-1">
+          <CardHeader className="border-b">
+            <CardTitle className="text-lg">Chat</CardTitle>
+          </CardHeader>
+          <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
+            {messages.map((message) => (
               <div
-                className={`max-w-[80%] rounded-lg p-3 ${
-                  message.role === "assistant"
-                    ? "bg-muted"
-                    : "bg-primary text-primary-foreground"
+                key={message.id}
+                className={`flex ${
+                  message.role === "assistant" ? "justify-start" : "justify-end"
                 }`}
               >
-                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-              </div>
-            </div>
-          ))}
-          {loading && (
-            <div className="flex justify-start">
-              <div className="bg-muted rounded-lg p-3">
-                <div className="flex gap-1">
-                  <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" />
-                  <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce [animation-delay:0.1s]" />
-                  <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce [animation-delay:0.2s]" />
+                <div
+                  className={`max-w-[80%] rounded-lg p-3 ${
+                    message.role === "assistant"
+                      ? "bg-muted"
+                      : "bg-primary text-primary-foreground"
+                  }`}
+                >
+                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                 </div>
               </div>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
-        </CardContent>
-        <div className="p-4 border-t">
-          {isComplete ? (
-            <Button className="w-full" size="lg" onClick={handleComplete}>
-              <CheckCircle className="h-5 w-5 mr-2" />
-              Complete
-            </Button>
-          ) : (
+            ))}
+            {loading && (
+              <div className="flex justify-start">
+                <div className="bg-muted rounded-lg p-3">
+                  <div className="flex gap-1">
+                    <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" />
+                    <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce [animation-delay:0.1s]" />
+                    <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce [animation-delay:0.2s]" />
+                  </div>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </CardContent>
+          <div className="p-4 border-t">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -249,9 +243,36 @@ export default function InterviewPage({
                 <Send className="h-4 w-4" />
               </Button>
             </form>
-          )}
-        </div>
-      </Card>
+          </div>
+        </Card>
+
+        <Card className="w-64 h-fit">
+          <CardHeader>
+            <CardTitle className="text-lg">Actions</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="text-sm text-muted-foreground">
+              {canEndInterview ? (
+                <p>You can end the interview whenever you&apos;re ready.</p>
+              ) : (
+                <p>
+                  Please answer at least {5 - userMessageCount} more question
+                  {5 - userMessageCount !== 1 ? "s" : ""} before ending.
+                </p>
+              )}
+            </div>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={handleComplete}
+              disabled={!canEndInterview}
+            >
+              <CheckCircle className="h-5 w-5 mr-2" />
+              End Interview
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

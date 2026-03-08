@@ -211,11 +211,11 @@ export default async function RequestDetailPage({
           </Card>
         </div>
 
-        {/* Right: Start Session */}
+        {/* Right: Start Interview */}
         <div>
           <Card className="sticky top-6">
             <CardHeader>
-              <CardTitle>Start Session</CardTitle>
+              <CardTitle>Start Interview</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-3">
@@ -248,7 +248,7 @@ export default async function RequestDetailPage({
             <CardFooter className="flex flex-col gap-4">
               <form action={startSession} className="w-full">
                 <Button type="submit" className="w-full">
-                  Start Session
+                  Start Interview
                 </Button>
               </form>
               <p className="text-xs text-muted-foreground text-center">
