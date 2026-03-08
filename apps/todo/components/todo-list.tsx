@@ -33,10 +33,15 @@ export function TodoList() {
     setTodos((prev) => prev.filter((todo) => todo.id !== id));
   }
 
+  const sortedTodos = todos.sort((a, b) => {
+    const urgencyOrder = { high: 3, medium: 2, low: 1 };
+    return urgencyOrder[b.urgency] - urgencyOrder[a.urgency];
+  });
+
   const filteredTodos =
     activeTab === "all"
-      ? todos
-      : todos.filter((todo) => todo.urgency === activeTab);
+      ? sortedTodos
+      : sortedTodos.filter((todo) => todo.urgency === activeTab);
 
   if (!isLoaded) {
     return (
