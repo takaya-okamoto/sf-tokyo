@@ -25,7 +25,7 @@ export default async function HearingsPage() {
   const project = projectData as { id: string } | null;
 
   if (project) {
-    redirect(`/projects/${project.id}/hearings`);
+    redirect(`/projects/${project.id}`);
   } else {
     redirect("/projects");
   }

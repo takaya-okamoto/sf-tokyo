@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
 import {
@@ -11,8 +12,9 @@ import {
   TabsTrigger,
   TabsContent,
 } from "@repo/ui";
-import { Code, Settings } from "lucide-react";
+import { ArrowLeft, Code, Settings } from "lucide-react";
 import { SdkCodeBlock } from "./_components/sdk-code-block";
+import { GeneralSettingsForm } from "./_components/general-settings-form";
 
 export default async function ProjectSettingsPage({
   params,
@@ -33,6 +35,8 @@ export default async function ProjectSettingsPage({
     id: string;
     name: string;
     description: string | null;
+    purpose: string | null;
+    target_user: string | null;
   } | null;
 
   if (!project) {
@@ -63,8 +67,16 @@ export default async function ProjectSettingsPage({
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold">{project.name} - Settings</h1>
-        <p className="text-muted-foreground">
+        <div className="flex items-center gap-3">
+          <Link
+            href={`/projects/${projectId}`}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="h-6 w-6" />
+          </Link>
+          <h1 className="text-3xl font-bold">{project.name} - Settings</h1>
+        </div>
+        <p className="text-muted-foreground ml-9">
           Configure your project settings and SDK integration
         </p>
       </div>
@@ -160,19 +172,12 @@ export default async function ProjectSettingsPage({
         </TabsContent>
 
         <TabsContent value="general" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>General Settings</CardTitle>
-              <CardDescription>
-                Configure general project settings
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground text-center py-8">
-                Additional settings coming soon
-              </p>
-            </CardContent>
-          </Card>
+          <GeneralSettingsForm
+            projectId={projectId}
+            initialName={project.name}
+            initialPurpose={project.purpose ?? ""}
+            initialTargetUser={project.target_user ?? ""}
+          />
         </TabsContent>
       </Tabs>
     </div>

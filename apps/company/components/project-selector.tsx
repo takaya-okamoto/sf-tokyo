@@ -22,14 +22,8 @@ export function ProjectSelector({ projects }: { projects: Project[] }) {
 
   const handleSelect = (id: string) => {
     setOpen(false);
-    // Navigate to the same section in the new project
-    if (pathname.includes("/hearings")) {
-      router.push(`/projects/${id}/hearings`);
-    } else if (pathname.includes("/results")) {
-      router.push(`/projects/${id}/results`);
-    } else {
-      router.push(`/projects/${id}`);
-    }
+    // Navigate to the new project dashboard
+    router.push(`/projects/${id}`);
   };
 
   return (

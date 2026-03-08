@@ -38,7 +38,7 @@ export function HearingEditForm({ hearing, projectId }: { hearing: HearingReques
       return;
     }
 
-    router.push(`/projects/${projectId}/hearings`);
+    router.push(`/projects/${projectId}`);
     router.refresh();
   }
 

@@ -109,12 +109,14 @@ export default async function ProjectDashboardPage({
               Settings
             </Button>
           </Link>
-          <Link href={`/projects/${projectId}/hearings/new`}>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Create New Interview
-            </Button>
-          </Link>
+          {hearings.length > 0 && (
+            <Link href={`/projects/${projectId}/hearings/new`}>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Create New Interview
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
 

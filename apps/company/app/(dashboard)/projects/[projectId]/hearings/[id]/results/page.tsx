@@ -52,7 +52,7 @@ export default async function HearingResultsPage({
   return (
     <div className="space-y-8">
       <div className="flex items-center gap-4">
-        <Link href={`/projects/${projectId}/hearings`}>
+        <Link href={`/projects/${projectId}`}>
           <Button variant="ghost" size="icon">
             <ArrowLeft className="h-4 w-4" />
           </Button>

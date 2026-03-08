@@ -220,6 +220,7 @@ export type Database = {
           reward_type: string | null
           status: Database["public"]["Enums"]["hearing_status"]
           target_url: string
+          thumbnail_path: string | null
           title: string
           total_budget_cap: number | null
           updated_at: string
@@ -238,6 +239,7 @@ export type Database = {
           reward_type?: string | null
           status?: Database["public"]["Enums"]["hearing_status"]
           target_url: string
+          thumbnail_path?: string | null
           title: string
           total_budget_cap?: number | null
           updated_at?: string
@@ -256,6 +258,7 @@ export type Database = {
           reward_type?: string | null
           status?: Database["public"]["Enums"]["hearing_status"]
           target_url?: string
+          thumbnail_path?: string | null
           title?: string
           total_budget_cap?: number | null
           updated_at?: string
@@ -281,6 +284,7 @@ export type Database = {
         Row: {
           age_max: number | null
           age_min: number | null
+          country: string | null
           created_at: string
           details: string | null
           gender: string | null
@@ -292,6 +296,7 @@ export type Database = {
         Insert: {
           age_max?: number | null
           age_min?: number | null
+          country?: string | null
           created_at?: string
           details?: string | null
           gender?: string | null
@@ -303,6 +308,7 @@ export type Database = {
         Update: {
           age_max?: number | null
           age_min?: number | null
+          country?: string | null
           created_at?: string
           details?: string | null
           gender?: string | null
@@ -476,6 +482,8 @@ export type Database = {
           description: string | null
           id: string
           name: string
+          purpose: string | null
+          target_user: string | null
           updated_at: string
         }
         Insert: {
@@ -484,6 +492,8 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
+          purpose?: string | null
+          target_user?: string | null
           updated_at?: string
         }
         Update: {
@@ -492,6 +502,8 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          purpose?: string | null
+          target_user?: string | null
           updated_at?: string
         }
         Relationships: [

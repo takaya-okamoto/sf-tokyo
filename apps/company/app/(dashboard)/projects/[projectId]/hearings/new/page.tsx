@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
+import Image from "next/image";
 import {
   Button,
   Input,
@@ -12,7 +13,7 @@ import {
   cn,
 } from "@repo/ui";
 import { createBrowserClient } from "@/lib/supabase/client";
-import { Check, Plus, Trash2 } from "lucide-react";
+import { Check, Plus, Trash2, ImagePlus, X } from "lucide-react";
 
 // --- Types ---
 
@@ -31,6 +32,8 @@ interface SurveyQuestion {
 interface FormData {
   // Step 1
   title: string;
+  thumbnailFile: File | null;
+  thumbnailPreview: string | null;
   estimatedDuration: string;
   preparations: string[];
   todos: TodoStep[];
@@ -39,6 +42,7 @@ interface FormData {
   personaAgeMin: string;
   personaAgeMax: string;
   personaGender: string;
+  personaCountry: string;
   personaOccupation: string;
   personaDetails: string;
   preSurveyQuestions: SurveyQuestion[];
@@ -280,6 +284,8 @@ export default function NewHearingPage() {
 
   const [formData, setFormData] = useState<FormData>({
     title: "",
+    thumbnailFile: null,
+    thumbnailPreview: null,
     estimatedDuration: "",
     preparations: [""],
     todos: [{ id: generateId(), content: "" }],
@@ -287,6 +293,7 @@ export default function NewHearingPage() {
     personaAgeMin: "",
     personaAgeMax: "",
     personaGender: "",
+    personaCountry: "",
     personaOccupation: "",
     personaDetails: "",
     preSurveyQuestions: [],
@@ -358,13 +365,14 @@ export default function NewHearingPage() {
     const supabase = createBrowserClient();
 
     const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session?.user) {
       setError("Login required");
       setLoading(false);
       return;
     }
+    const user = session.user;
 
     const { data: companyMemberData } = await (
       supabase.from("company_members") as ReturnType<typeof supabase.from>
@@ -393,7 +401,7 @@ export default function NewHearingPage() {
           estimated_duration: Number(formData.estimatedDuration) || null,
           reward_per_user: Number(formData.rewardPerUser) || 0,
           total_budget_cap: Number(formData.totalBudgetCap) || 0,
-          status: "draft",
+          status: "active",
         } as never)
         .select("id")
         .single();
@@ -401,6 +409,24 @@ export default function NewHearingPage() {
       if (insertError) throw insertError;
       const hearing = hearingData as { id: string };
       const hearingId = hearing.id;
+
+      // Upload thumbnail if provided
+      if (formData.thumbnailFile) {
+        const ext = formData.thumbnailFile.name.split(".").pop() || "jpg";
+        const storagePath = `${companyMember.company_id}/thumbnails/${hearingId}.${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from("company-assets")
+          .upload(storagePath, formData.thumbnailFile, { upsert: true });
+        if (uploadError) throw uploadError;
+
+        // Save path to hearing_request
+        const { error: updateError } = await (
+          supabase.from("hearing_requests") as ReturnType<typeof supabase.from>
+        )
+          .update({ thumbnail_path: storagePath } as never)
+          .eq("id", hearingId);
+        if (updateError) throw updateError;
+      }
 
       // 2. Insert preparations
       const preps = formData.preparations.filter(Boolean);
@@ -437,6 +463,7 @@ export default function NewHearingPage() {
         formData.personaAgeMin ||
         formData.personaAgeMax ||
         formData.personaGender ||
+        formData.personaCountry ||
         formData.personaOccupation ||
         formData.personaDetails
       ) {
@@ -447,6 +474,7 @@ export default function NewHearingPage() {
           age_min: Number(formData.personaAgeMin) || null,
           age_max: Number(formData.personaAgeMax) || null,
           gender: formData.personaGender || null,
+          country: formData.personaCountry || null,
           occupation: formData.personaOccupation || null,
           details: formData.personaDetails || null,
         } as never);
@@ -505,7 +533,7 @@ export default function NewHearingPage() {
         }
       }
 
-      router.push(`/projects/${projectId}/hearings`);
+      router.push(`/projects/${projectId}`);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
@@ -554,6 +582,57 @@ export default function NewHearingPage() {
                   onChange={(e) => updateField("title", e.target.value)}
                   required
                 />
+              </div>
+
+              {/* Thumbnail */}
+              <div className="space-y-2">
+                <Label>Thumbnail Image</Label>
+                <p className="text-sm text-muted-foreground">
+                  Displayed as a thumbnail when users browse interviews (optional)
+                </p>
+                {formData.thumbnailPreview ? (
+                  <div className="relative w-48 h-32 rounded-lg overflow-hidden border">
+                    <Image
+                      src={formData.thumbnailPreview}
+                      alt="Thumbnail preview"
+                      fill
+                      className="object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (formData.thumbnailPreview) {
+                          URL.revokeObjectURL(formData.thumbnailPreview);
+                        }
+                        updateField("thumbnailFile", null);
+                        updateField("thumbnailPreview", null);
+                      }}
+                      className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-1 hover:bg-black/80 transition-colors"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center w-48 h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                    <ImagePlus className="h-8 w-8 text-muted-foreground mb-1" />
+                    <span className="text-xs text-muted-foreground">Click to upload</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          if (formData.thumbnailPreview) {
+                            URL.revokeObjectURL(formData.thumbnailPreview);
+                          }
+                          updateField("thumbnailFile", file);
+                          updateField("thumbnailPreview", URL.createObjectURL(file));
+                        }
+                      }}
+                    />
+                  </label>
+                )}
               </div>
 
               {/* Estimated Duration */}
@@ -684,31 +763,33 @@ export default function NewHearingPage() {
                   Define the target user profile for this interview
                 </p>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="personaAgeMin">Age (Min)</Label>
+                <div className="space-y-2">
+                  <Label>Age</Label>
+                  <div className="flex items-center gap-2">
                     <Input
                       id="personaAgeMin"
                       type="number"
                       min="0"
-                      placeholder="e.g., 20"
+                      placeholder="Min"
+                      className="w-28"
                       value={formData.personaAgeMin}
                       onChange={(e) =>
                         updateField("personaAgeMin", e.target.value)
                       }
+                      required={!formData.personaAgeMax}
                     />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="personaAgeMax">Age (Max)</Label>
+                    <span className="text-muted-foreground">~</span>
                     <Input
                       id="personaAgeMax"
                       type="number"
                       min="0"
-                      placeholder="e.g., 40"
+                      placeholder="Max"
+                      className="w-28"
                       value={formData.personaAgeMax}
                       onChange={(e) =>
                         updateField("personaAgeMax", e.target.value)
                       }
+                      required={!formData.personaAgeMin}
                     />
                   </div>
                 </div>
@@ -741,6 +822,18 @@ export default function NewHearingPage() {
                       }
                     />
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="personaCountry">Country</Label>
+                  <Input
+                    id="personaCountry"
+                    placeholder="e.g., Japan, United States"
+                    value={formData.personaCountry}
+                    onChange={(e) =>
+                      updateField("personaCountry", e.target.value)
+                    }
+                  />
                 </div>
 
                 <div className="space-y-2">
