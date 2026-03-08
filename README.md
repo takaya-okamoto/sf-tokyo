@@ -1,59 +1,59 @@
-# ユーザーヒアリングプラットフォーム
+# User Hearing Platform
 
-企業がユーザーにサービスを試用してもらい、録画・ログ収集とAIチャットでフィードバックを収集するプラットフォームです。
+A platform where companies can have users try their services and collect feedback through recording, log collection, and AI chat interviews.
 
-## 技術スタック
+## Tech Stack
 
-| 領域 | 技術 |
-|------|------|
-| モノレポ | Turborepo + pnpm workspaces |
-| フロントエンド | Next.js 15 (App Router, Turbopack) |
-| バックエンド | Supabase (PostgreSQL, Auth, Storage) |
+| Area | Technology |
+|------|------------|
+| Monorepo | Turborepo + pnpm workspaces |
+| Frontend | Next.js 15 (App Router, Turbopack) |
+| Backend | Supabase (PostgreSQL, Auth, Storage) |
 | UI | shadcn/ui + Tailwind CSS |
-| AIチャット | Vercel AI SDK + OpenAI (Phase 2) |
+| AI Chat | Vercel AI SDK + OpenAI (Phase 2) |
 
-## プロジェクト構造
+## Project Structure
 
 ```
 sftokyo/
 ├── apps/
-│   ├── company/          # 企業向けアプリ（ポート3001）
-│   └── user/             # ユーザー向けアプリ（ポート3000）
+│   ├── company/          # Company app (port 3001)
+│   └── user/             # User app (port 3000)
 ├── packages/
-│   ├── ui/               # 共通UIコンポーネント（shadcn/ui）
-│   ├── database/         # Supabase型定義
-│   └── supabase/         # 共通Supabaseクライアント
+│   ├── ui/               # Shared UI components (shadcn/ui)
+│   ├── database/         # Supabase type definitions
+│   └── supabase/         # Shared Supabase client
 └── supabase/
-    └── migrations/       # DBマイグレーション
+    └── migrations/       # DB migrations
 ```
 
-## 必要な環境
+## Requirements
 
-- Node.js 18以上
-- pnpm 9以上
-- Docker（Supabase Local Development用）
+- Node.js 18 or higher
+- pnpm 9 or higher
+- Docker (for Supabase Local Development)
 - Supabase CLI
 
-## セットアップ手順
+## Setup Instructions
 
-### 1. 依存関係のインストール
+### 1. Install Dependencies
 
 ```bash
 pnpm install
 ```
 
-> **注意**: Supabase CLIは依存関係として含まれているため、自動的にインストールされます。
-> Docker Desktop、Rancher Desktop、またはPodmanが必要です。
+> **Note**: Supabase CLI is included as a dependency and will be installed automatically.
+> Docker Desktop, Rancher Desktop, or Podman is required.
 
-### 2. Supabase ローカル環境の起動
+### 2. Start Supabase Local Environment
 
 ```bash
-# Supabaseのローカル環境を起動（Dockerが必要）
-# マイグレーションは自動的に適用されます
+# Start Supabase local environment (requires Docker)
+# Migrations are applied automatically
 pnpm db:start
 ```
 
-起動が完了すると、以下の情報が表示されます：
+Upon completion, the following information will be displayed:
 
 ```
 Started supabase local development setup.
@@ -72,216 +72,216 @@ service_role key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
        S3 Region: local
 ```
 
-### 3. 環境変数の設定
+### 3. Configure Environment Variables
 
-各アプリディレクトリに `.env.local` ファイルを作成します。
+Create `.env.local` files in each app directory.
 
-**apps/company/.env.local** と **apps/user/.env.local**:
+**apps/company/.env.local** and **apps/user/.env.local**:
 
 ```bash
-# Supabase設定（supabase startで表示された値を使用）
+# Supabase configuration (use values displayed by supabase start)
 NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
-# オプション：サービスロールキー（サーバーサイドのみ）
+# Optional: Service role key (server-side only)
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
-または、ルートディレクトリに `.env.local` を作成してシンボリックリンクを張ることもできます。
+Alternatively, you can create a `.env.local` in the root directory and symlink it.
 
-### 4. 開発サーバーの起動
+### 4. Start Development Server
 
 ```bash
-# 両方のアプリを同時に起動
+# Start both apps simultaneously
 pnpm dev
 ```
 
-- **企業向けアプリ**: http://company.localhost:3001
-- **ユーザー向けアプリ**: http://user.localhost:3002
+- **Company App**: http://company.localhost:3001
+- **User App**: http://user.localhost:3002
 - **Supabase Studio**: http://localhost:54323
 
-## アカウント登録とサインイン
+## Account Registration and Sign In
 
-### 企業アカウント
+### Company Account
 
-1. http://company.localhost:3001/signup にアクセス
-2. 以下の情報を入力：
-   - 会社名
-   - メールアドレス
-   - パスワード（6文字以上）
-3. 「アカウント作成」ボタンをクリック
-4. 自動的にダッシュボードにリダイレクトされます
+1. Go to http://company.localhost:3001/signup
+2. Enter the following information:
+   - Company name
+   - Email address
+   - Password (6 characters or more)
+3. Click the "Create Account" button
+4. You will be automatically redirected to the dashboard
 
-### ユーザーアカウント
+### User Account
 
-1. http://user.localhost:3002/signup にアクセス
-2. 以下の情報を入力：
-   - 表示名
-   - メールアドレス
-   - パスワード（6文字以上）
-3. 「アカウント作成」ボタンをクリック
-4. 自動的にホーム画面にリダイレクトされます
+1. Go to http://user.localhost:3002/signup
+2. Enter the following information:
+   - Display name
+   - Email address
+   - Password (6 characters or more)
+3. Click the "Create Account" button
+4. You will be automatically redirected to the home screen
 
-### サインイン
+### Sign In
 
-- **企業**: http://company.localhost:3001/login
-- **ユーザー**: http://user.localhost:3002/login
+- **Company**: http://company.localhost:3001/login
+- **User**: http://user.localhost:3002/login
 
-メールアドレスとパスワードでログインできます。
+You can log in with your email address and password.
 
-### メール確認について
+### About Email Verification
 
-ローカル開発環境では、メール確認は無効化されています。
-本番環境では、Supabaseのダッシュボードでメール設定を行う必要があります。
+Email verification is disabled in the local development environment.
+For production, you need to configure email settings in the Supabase dashboard.
 
-ローカルで送信されたメールは、Inbucket (http://localhost:54324) で確認できます。
+Emails sent locally can be viewed in Inbucket (http://localhost:54324).
 
-## 主な機能
+## Main Features
 
-### 企業向けアプリ (company.localhost:3001)
+### Company App (company.localhost:3001)
 
-| ページ | 説明 |
-|--------|------|
-| `/` | ダッシュボード - 統計と最近のセッション |
-| `/hearings` | ヒアリング一覧 - 作成・編集・管理 |
-| `/hearings/new` | 新規ヒアリング作成 |
-| `/hearings/[id]` | ヒアリング編集 |
-| `/hearings/[id]/results` | セッション結果一覧 |
-| `/results` | 全セッション結果 |
-| `/results/[sessionId]` | セッション詳細（録画・ログ・AI要約） |
-| `/settings` | 企業設定 |
-| `/settings/team` | チームメンバー管理 |
+| Page | Description |
+|------|-------------|
+| `/` | Dashboard - Statistics and recent sessions |
+| `/hearings` | Hearings list - Create, edit, manage |
+| `/hearings/new` | Create new hearing |
+| `/hearings/[id]` | Edit hearing |
+| `/hearings/[id]/results` | Session results list |
+| `/results` | All session results |
+| `/results/[sessionId]` | Session details (recording, logs, AI summary) |
+| `/settings` | Company settings |
+| `/settings/team` | Team member management |
 
-### ユーザー向けアプリ (user.localhost:3002)
+### User App (user.localhost:3002)
 
-| ページ | 説明 |
-|--------|------|
-| `/` | ヒアリング一覧 - 参加可能なヒアリング |
-| `/requests/[id]` | ヒアリング詳細・参加 |
-| `/session/[id]` | セッション開始前の確認 |
-| `/session/[id]/recording` | 録画中画面 |
-| `/interview/[id]` | AIチャットインタビュー |
-| `/history` | 参加履歴 |
-| `/profile` | プロフィール設定 |
+| Page | Description |
+|------|-------------|
+| `/` | Hearings list - Available hearings to participate |
+| `/requests/[id]` | Hearing details / Join |
+| `/session/[id]` | Pre-session confirmation |
+| `/session/[id]/recording` | Recording screen |
+| `/interview/[id]` | AI chat interview |
+| `/history` | Participation history |
+| `/profile` | Profile settings |
 
-## データベーススキーマ
+## Database Schema
 
-### 主要テーブル
+### Main Tables
 
-| テーブル | 説明 |
-|----------|------|
-| `profiles` | ユーザープロファイル（auth.usersを拡張） |
-| `companies` | 企業情報 |
-| `company_members` | 企業メンバー（複数ユーザー対応） |
-| `hearing_requests` | ヒアリング依頼 |
-| `interview_sessions` | インタビューセッション |
-| `recordings` | 録画データ |
-| `event_logs` | イベントログ（click, scroll等） |
-| `ai_interview_messages` | AIチャットメッセージ |
-| `ai_interview_summaries` | AI要約 |
+| Table | Description |
+|-------|-------------|
+| `profiles` | User profiles (extends auth.users) |
+| `companies` | Company information |
+| `company_members` | Company members (multi-user support) |
+| `hearing_requests` | Hearing requests |
+| `interview_sessions` | Interview sessions |
+| `recordings` | Recording data |
+| `event_logs` | Event logs (click, scroll, etc.) |
+| `ai_interview_messages` | AI chat messages |
+| `ai_interview_summaries` | AI summaries |
 
-### Enum定義
+### Enum Definitions
 
 ```sql
--- ユーザーロール
+-- User roles
 CREATE TYPE user_role AS ENUM ('user', 'company', 'admin');
 
--- ヒアリングステータス
+-- Hearing status
 CREATE TYPE hearing_status AS ENUM ('draft', 'active', 'paused', 'completed', 'archived');
 
--- セッションステータス
+-- Session status
 CREATE TYPE session_status AS ENUM ('pending', 'recording', 'interview', 'completed', 'cancelled');
 ```
 
 ## Supabase Studio
 
-ローカル環境では http://localhost:54323 でSupabase Studioにアクセスできます。
+In the local environment, you can access Supabase Studio at http://localhost:54323.
 
-### 主な機能
+### Main Features
 
-- **Table Editor**: テーブルデータの閲覧・編集
-- **SQL Editor**: SQLクエリの実行
-- **Authentication**: ユーザー管理
-- **Storage**: ファイルストレージ管理
-- **Logs**: アプリケーションログ
+- **Table Editor**: View and edit table data
+- **SQL Editor**: Execute SQL queries
+- **Authentication**: User management
+- **Storage**: File storage management
+- **Logs**: Application logs
 
-## 便利なコマンド
+## Useful Commands
 
 ```bash
-# 開発サーバー起動
+# Start development server
 pnpm dev
 
-# ビルド
+# Build
 pnpm build
 
-# Supabase起動
+# Start Supabase
 pnpm db:start
 
-# Supabase停止
+# Stop Supabase
 pnpm db:stop
 
-# Supabaseステータス確認
+# Check Supabase status
 pnpm db:status
 
-# データベースリセット（マイグレーション再適用）
+# Reset database (reapply migrations)
 pnpm db:reset
 
-# 型定義生成
+# Generate type definitions
 pnpm db:types
 ```
 
-## トラブルシューティング
+## Troubleshooting
 
-### Supabaseが起動しない
+### Supabase Won't Start
 
 ```bash
-# Dockerが起動していることを確認
+# Verify Docker is running
 docker ps
 
-# Supabaseをリセット
+# Reset Supabase
 pnpm db:stop
 pnpm db:start
 ```
 
-### データベースをリセットしたい
+### Want to Reset the Database
 
 ```bash
-# 全てのデータを削除してマイグレーションを再適用
+# Delete all data and reapply migrations
 pnpm db:reset
 ```
 
-### 型エラーが発生する
+### Type Errors Occurring
 
 ```bash
-# 型定義を再生成
+# Regenerate type definitions
 pnpm db:types
 ```
 
-### ログインできない
+### Can't Log In
 
-1. Supabase Studioで `profiles` テーブルを確認
-2. ユーザーの `role` が正しいか確認（企業: `company`, ユーザー: `user`）
-3. 必要に応じてデータを修正
+1. Check the `profiles` table in Supabase Studio
+2. Verify the user's `role` is correct (company: `company`, user: `user`)
+3. Modify data as needed
 
-## 本番環境へのデプロイ
+## Production Deployment
 
-### Supabaseプロジェクトの作成
+### Create Supabase Project
 
-1. https://supabase.com でプロジェクトを作成
-2. プロジェクトのURLとanon keyを取得
-3. 環境変数を本番用に設定
+1. Create a project at https://supabase.com
+2. Get the project URL and anon key
+3. Set environment variables for production
 
-### Vercelへのデプロイ
+### Deploy to Vercel
 
 ```bash
-# Vercel CLIでデプロイ
+# Deploy with Vercel CLI
 vercel
 ```
 
-環境変数を設定：
+Set environment variables:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
-## ライセンス
+## License
 
 MIT

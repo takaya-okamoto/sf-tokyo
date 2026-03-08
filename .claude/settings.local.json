@@ -11,7 +11,19 @@
       "Bash(git commit -m \"$\\(cat <<''EOF''\nchore: Update local settings and documentation\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(git push:*)",
       "Bash(curl:*)",
-      "Bash(pnpm exec tsc:*)"
+      "Bash(pnpm exec tsc:*)",
+      "Bash(pnpm add:*)",
+      "Bash(xargs:*)",
+      "Bash(pnpm supabase db query:*)",
+      "Bash(psql:*)",
+      "Bash(pnpm --filter \"@repo/user\" exec tsc:*)",
+      "Bash(find:*)",
+      "Bash(cat:*)",
+      "Bash(pnpm --filter \"@repo/hearing-sdk\" exec tsc:*)",
+      "Bash(pnpm --filter \"@repo/hearing-sdk\" build:*)",
+      "Bash(source:*)",
+      "Bash(pnpm tsx:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
