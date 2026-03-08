@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@repo/supabase/middleware";
 
-const publicRoutes = ["/login", "/signup"];
+const publicRoutes = ["/login", "/signup", "/sdk"];
 
 export async function middleware(request: NextRequest) {
   const { user, supabaseResponse, supabase } = await updateSession(request);
@@ -44,6 +44,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|sdk/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|js)$).*)",
   ],
 };

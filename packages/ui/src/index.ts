@@ -35,6 +35,7 @@ export {
   ToastAction,
 } from "./components/toast";
 export { Toaster } from "./components/toaster";
+export { Progress } from "./components/progress";
 export {
   useFormField,
   Form,

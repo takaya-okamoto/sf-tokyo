@@ -4,6 +4,7 @@ import { createClickHandler } from "./events/click";
 import { createScrollHandler } from "./events/scroll";
 import { createVisibilityHandler } from "./events/visibility";
 import { createFloatingButton, removeFloatingButton } from "./ui/floating-button";
+import { showRecordingIndicator, removeRecordingIndicator } from "./ui/recording-indicator";
 
 export class InterviewTracker {
   private config: Required<HearingSDKConfig>;
@@ -83,6 +84,9 @@ export class InterviewTracker {
       elapsedMs: 0,
       timestamp: new Date().toISOString(),
     });
+
+    // 録画インジケーター表示
+    showRecordingIndicator();
 
     // フローティングボタン表示
     this.showFloatingButton();
@@ -165,6 +169,7 @@ export class InterviewTracker {
     }
 
     removeFloatingButton();
+    removeRecordingIndicator();
     this.initialized = false;
   }
 }

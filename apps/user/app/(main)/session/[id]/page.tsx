@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Button } from "@repo/ui";
-import { ArrowLeft, Video, Mic, Monitor, AlertCircle } from "lucide-react";
+import { ArrowLeft, Video, Monitor, AlertCircle } from "lucide-react";
 
 export default async function SessionPage({
   params,
@@ -105,15 +105,6 @@ export default async function SessionPage({
                 <p className="font-medium">Screen Recording</p>
                 <p className="text-sm text-muted-foreground">
                   Your screen will be recorded while using the service
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <Mic className="h-5 w-5 text-primary mt-0.5" />
-              <div>
-                <p className="font-medium">Audio Recording</p>
-                <p className="text-sm text-muted-foreground">
-                  Please think aloud and verbalize your thoughts
                 </p>
               </div>
             </div>
