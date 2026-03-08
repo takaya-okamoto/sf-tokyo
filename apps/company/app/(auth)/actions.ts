@@ -62,23 +62,8 @@ export async function signUp(formData: FormData) {
       return { error: memberError.message };
     }
 
-    // Create initial project
-    const { data: project, error: projectError } = await adminClient
-      .from("projects")
-      .insert({
-        company_id: company.id,
-        name: "My First Project",
-        description: "Your first hearing project. Rename or edit as needed.",
-      })
-      .select()
-      .single();
-
-    if (projectError) {
-      return { error: projectError.message };
-    }
-
-    // Redirect to the newly created project
-    redirect(`/projects/${project.id}`);
+    // Redirect to onboarding to create first project
+    redirect("/onboarding/project");
   }
 
   redirect("/");
@@ -106,4 +91,51 @@ export async function signOut() {
   const supabase = await createServerClient();
   await supabase.auth.signOut();
   redirect("/login");
+}
+
+export async function createFirstProject(formData: FormData) {
+  const supabase = await createServerClient();
+  const adminClient = createAdminClient();
+
+  const name = formData.get("name") as string;
+  const description = (formData.get("description") as string) || null;
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Not authenticated" };
+  }
+
+  // Get company_id from company_members
+  const { data: memberData, error: memberError } = await (
+    supabase.from("company_members") as ReturnType<typeof supabase.from>
+  )
+    .select("company_id")
+    .eq("user_id", user.id)
+    .single();
+
+  if (memberError || !memberData) {
+    return { error: "Company not found" };
+  }
+
+  const companyMember = memberData as { company_id: string };
+
+  // Create project
+  const { data: project, error: projectError } = await adminClient
+    .from("projects")
+    .insert({
+      company_id: companyMember.company_id,
+      name,
+      description,
+    })
+    .select()
+    .single();
+
+  if (projectError) {
+    return { error: projectError.message };
+  }
+
+  redirect(`/projects/${project.id}`);
 }

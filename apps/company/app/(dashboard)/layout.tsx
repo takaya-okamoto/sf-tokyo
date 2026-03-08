@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
 import { Button } from "@repo/ui";
 import { signOut } from "../(auth)/actions";
@@ -32,6 +33,11 @@ export default async function DashboardLayout({
     .order("created_at", { ascending: false });
 
   const projects = (projectsData as Array<{ id: string; name: string }>) ?? [];
+
+  // Redirect to onboarding if no projects exist
+  if (projects.length === 0) {
+    redirect("/onboarding/project");
+  }
 
   return (
     <div className="min-h-screen bg-muted/30">
