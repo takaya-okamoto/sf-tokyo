@@ -69,16 +69,16 @@ async function generateCodeChanges(
 ): Promise<AIResponse> {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-  const prompt = `あなたはTodo Appの改善を行うエンジニアです。
-以下のタスクに基づいて、コードの修正を行ってください。
+  const prompt = `You are a senior software engineer improving a Todo App.
+Your task is to implement the following improvement by modifying the existing source code.
 
-## 改善タスク
+## Improvement Task
 ${taskContent}
 
-## 理由
+## Why This Matters
 ${taskReason}
 
-## 現在のソースコード
+## Current Source Code
 ${Object.entries(sources)
   .map(
     ([path, code]) => `
@@ -90,33 +90,39 @@ ${code}
   )
   .join("\n")}
 
-## 出力形式
-以下のJSON形式で、変更が必要なファイルのみを出力してください。
-変更がない場合でも、必ず有効なJSONを返してください。
+## Instructions
+1. Analyze the improvement task and determine which file(s) need to be modified
+2. Implement the changes to fulfill the task requirements
+3. Return the COMPLETE modified file content (not just the diff)
 
-重要な制約:
-- pathは必ず "apps/todo/" で始まるパスのみ使用可能です
-- 提供されたソースコードのファイルのみ変更できます
-- 新しいファイルは作成しないでください
-- contentには完全な新しいファイル内容を含めてください
+## Output Format
+Return a valid JSON object with the following structure:
 
-\`\`\`json
 {
   "files": [
     {
       "path": "apps/todo/components/todo-item.tsx",
-      "content": "// 完全な新しいファイル内容"
+      "content": "// Complete file content with your changes applied"
     }
   ],
-  "summary": "変更内容の簡潔な説明（日本語）"
+  "summary": "Brief description of what was changed"
 }
-\`\`\`
-`;
+
+## Important Rules
+- You MUST include at least one file in the "files" array
+- The "path" must be one of the existing files provided above
+- The "content" must be the COMPLETE file content, not a partial diff
+- Keep the existing code structure and only add/modify what's necessary
+- Maintain TypeScript types and existing imports
+- Do NOT create new files
+
+Now implement the improvement task by modifying the appropriate file(s).`;
 
   const response = await openai.chat.completions.create({
     model: "gpt-4-turbo-preview",
     messages: [{ role: "user", content: prompt }],
     response_format: { type: "json_object" },
+    temperature: 0.2,
   });
 
   const content = response.choices[0]?.message?.content;
@@ -124,7 +130,12 @@ ${code}
     throw new Error("OpenAI returned empty response");
   }
 
-  return JSON.parse(content) as AIResponse;
+  const parsed = JSON.parse(content) as AIResponse;
+
+  // Log for debugging
+  console.log("AI Response:", JSON.stringify(parsed, null, 2));
+
+  return parsed;
 }
 
 // Validate that all file paths are within apps/todo/
