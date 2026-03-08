@@ -30,6 +30,7 @@ interface SurveyQuestion {
 
 interface FormData {
   // Step 1
+  title: string;
   estimatedDuration: string;
   preparations: string[];
   todos: TodoStep[];
@@ -278,6 +279,7 @@ export default function NewHearingPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<FormData>({
+    title: "",
     estimatedDuration: "",
     preparations: [""],
     todos: [{ id: generateId(), content: "" }],
@@ -386,7 +388,7 @@ export default function NewHearingPage() {
         .insert({
           company_id: companyMember.company_id,
           project_id: projectId,
-          title: `Interview - ${new Date().toLocaleDateString()}`,
+          title: formData.title || `Interview - ${new Date().toLocaleDateString()}`,
           target_url: formData.productUrl,
           estimated_duration: Number(formData.estimatedDuration) || null,
           reward_per_user: Number(formData.rewardPerUser) || 0,
@@ -542,6 +544,18 @@ export default function NewHearingPage() {
           {/* ===== STEP 1: Interview Settings ===== */}
           {currentStep === 0 && (
             <>
+              {/* Title */}
+              <div className="space-y-2">
+                <Label htmlFor="title">Interview Title</Label>
+                <Input
+                  id="title"
+                  placeholder="e.g., New Feature Usability Test"
+                  value={formData.title}
+                  onChange={(e) => updateField("title", e.target.value)}
+                  required
+                />
+              </div>
+
               {/* Estimated Duration */}
               <div className="space-y-2">
                 <Label htmlFor="estimatedDuration">Estimated Duration (minutes)</Label>
