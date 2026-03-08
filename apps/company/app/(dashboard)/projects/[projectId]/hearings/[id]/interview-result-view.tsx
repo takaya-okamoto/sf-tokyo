@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Button, Card, CardContent, CardHeader, CardTitle, cn } from "@repo/ui";
-import { ArrowLeft, User, ClipboardList, FileText, Play, BarChart3, ListFilter, Sparkles, X, Loader2, ChevronDown, ChevronUp, MessageSquare, ExternalLink } from "lucide-react";
+import { ArrowLeft, User, ClipboardList, FileText, Play, BarChart3, ListFilter, Sparkles, X, Loader2, ChevronDown, ChevronUp, MessageSquare, ExternalLink, RefreshCw } from "lucide-react";
 
 // --- Types ---
 
@@ -404,7 +404,7 @@ function ChatSection({ messages }: { messages: ChatMessage[] }) {
 
 // --- AI Improvement Tasks ---
 
-const MAX_VISIBLE_TASKS = 3;
+const MAX_VISIBLE_TASKS = 5;
 
 type ImprovementTask = {
   id: string;
@@ -413,74 +413,73 @@ type ImprovementTask = {
   dismissed: boolean;
 };
 
-function generateTasksFromInsights(insights: string[]): ImprovementTask[] {
-  const tasks: { content: string; reason: string }[] = [];
-  const seen = new Set<string>();
-
-  for (const insight of insights) {
-    const lower = insight.toLowerCase();
-
-    let content = "";
-    let key = "";
-    if (lower.includes("settings") && lower.includes("nav")) {
-      key = "settings-nav";
-      content = "Move Settings to the top navigation bar for better discoverability";
-    } else if (lower.includes("confirmation") && lower.includes("invite")) {
-      key = "invite-confirm";
-      content = "Add a confirmation dialog to the member invite flow";
-    } else if (lower.includes("onboarding") && lower.includes("wizard")) {
-      key = "onboarding-wizard";
-      content = "Redesign onboarding as a step-by-step wizard to reduce initial overwhelm";
-    } else if (lower.includes("terminolog")) {
-      key = "terminology";
-      content = "Review and simplify product terminology to be more user-friendly";
-    } else if (lower.includes("dark mode")) {
-      key = "dark-mode";
-      content = "Implement dark mode theme support";
-    } else if (lower.includes("real-time") && lower.includes("collaborat")) {
-      key = "realtime";
-      content = "Add real-time collaboration indicators (who is viewing a project)";
-    } else if (lower.includes("performance") && lower.includes("rated")) {
-      key = "performance";
-      content = "Continue monitoring and maintaining high performance standards";
-    } else if (lower.includes("recommend")) {
-      key = "recommend";
-      content = "Leverage positive user sentiment for testimonials and referral programs";
-    } else if (lower.includes("responsive") || lower.includes("desktop")) {
-      key = "responsive";
-      content = "Improve and test mobile responsive experience across devices";
-    } else if (lower.includes("sdk")) {
-      key = "sdk";
-      content = "Expand SDK documentation and add more integration examples";
-    } else {
-      key = `insight-${tasks.length}`;
-      content = `Investigate and address: ${insight}`;
-    }
-
-    if (seen.has(key)) continue;
-    seen.add(key);
-
-    const reason = `**Insight from user feedback:**\n\n> ${insight}\n\n**Why this matters:**\n\nThis was identified as a key finding from the interview sessions. Addressing this will improve the overall user experience and increase satisfaction.`;
-
-    tasks.push({ content, reason });
-  }
-
-  return tasks.map((t, i) => ({
-    id: `task-${i}`,
-    content: t.content,
-    reason: t.reason,
-    dismissed: false,
-  }));
-}
-
-function AIImprovementTasks({ insights, hearingId }: { insights: string[]; hearingId: string }) {
-  const [allTasks, setAllTasks] = useState<ImprovementTask[]>(() =>
-    generateTasksFromInsights(insights)
-  );
+function AIImprovementTasks({
+  hearingId,
+  hearingTitle,
+  hearingDescription,
+  messages
+}: {
+  hearingId: string;
+  hearingTitle: string;
+  hearingDescription?: string;
+  messages: ChatMessage[];
+}) {
+  const [allTasks, setAllTasks] = useState<ImprovementTask[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [fixingIds, setFixingIds] = useState<Set<string>>(new Set());
   const [createdPRs, setCreatedPRs] = useState<Record<string, { prUrl: string; prNumber: number }>>({});
   const [errorIds, setErrorIds] = useState<Set<string>>(new Set());
+
+  const fetchImprovements = useCallback(async () => {
+    // Filter out system messages
+    const filteredMessages = messages.filter(
+      (m) => !m.content.includes("[START_INTERVIEW]")
+    );
+
+    if (filteredMessages.length === 0) {
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setLoadError(null);
+
+    try {
+      const response = await fetch("/api/improvements/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          hearingTitle,
+          hearingDescription,
+          messages: filteredMessages,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to generate improvements");
+      }
+
+      const tasks = data.tasks.map((t: { id: string; content: string; reason: string }) => ({
+        ...t,
+        dismissed: false,
+      }));
+
+      setAllTasks(tasks);
+    } catch (error) {
+      console.error("Failed to fetch improvements:", error);
+      setLoadError(error instanceof Error ? error.message : "Failed to load improvements");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [hearingTitle, hearingDescription, messages]);
+
+  useEffect(() => {
+    fetchImprovements();
+  }, [fetchImprovements]);
 
   const visibleTasks = allTasks
     .filter((t) => !t.dismissed)
@@ -537,7 +536,66 @@ function AIImprovementTasks({ insights, hearingId }: { insights: string[]; heari
     }
   }
 
-  if (visibleTasks.length === 0) return null;
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Sparkles className="h-4 w-4" />
+            AI Suggested Improvements
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <span className="ml-2 text-sm text-muted-foreground">
+              Analyzing interview chat...
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Sparkles className="h-4 w-4" />
+            AI Suggested Improvements
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-6 gap-3">
+            <p className="text-sm text-destructive">{loadError}</p>
+            <Button variant="outline" size="sm" onClick={fetchImprovements}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Retry
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (visibleTasks.length === 0) {
+    return (
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Sparkles className="h-4 w-4" />
+            AI Suggested Improvements
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground text-center py-4">
+            No improvement suggestions available
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -547,9 +605,18 @@ function AIImprovementTasks({ insights, hearingId }: { insights: string[]; heari
             <Sparkles className="h-4 w-4" />
             AI Suggested Improvements
           </CardTitle>
-          <span className="text-xs text-muted-foreground">
-            {totalRemaining} remaining
-          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={fetchImprovements}
+              className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors"
+              title="Regenerate improvements"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </button>
+            <span className="text-xs text-muted-foreground">
+              {totalRemaining} remaining
+            </span>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -672,7 +739,6 @@ function OverviewPanel({ sessions, hearing }: { sessions: SessionDetail[]; heari
   const inProgress = sessions.filter(
     (s) => s.status === "recording" || s.status === "interview"
   );
-  const pending = sessions.filter((s) => s.status === "pending");
 
   // Aggregate summaries
   const allInsights = completed.flatMap((s) => {
@@ -681,6 +747,9 @@ function OverviewPanel({ sessions, hearing }: { sessions: SessionDetail[]; heari
       ? (s.summary.key_insights as string[])
       : [];
   });
+
+  // Aggregate all chat messages from completed sessions
+  const allMessages = completed.flatMap((s) => s.messages);
 
   // Aggregate survey responses
   const allResponses = completed.flatMap((s) => s.surveyResponses);
@@ -766,8 +835,12 @@ function OverviewPanel({ sessions, hearing }: { sessions: SessionDetail[]; heari
       </div>
 
       {/* AI Suggested Improvements */}
-      {allInsights.length > 0 && (
-        <AIImprovementTasks insights={allInsights} hearingId={hearing.id} />
+      {allMessages.length > 0 && (
+        <AIImprovementTasks
+          hearingId={hearing.id}
+          hearingTitle={hearing.title}
+          messages={allMessages}
+        />
       )}
 
       {/* Key Insights (aggregated from all summaries) */}
