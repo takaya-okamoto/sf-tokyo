@@ -46,31 +46,31 @@ export async function POST(request: NextRequest) {
       .map((m) => `${m.role === "assistant" ? "Interviewer" : "User"}: ${m.content}`)
       .join("\n\n");
 
-    const prompt = `あなたはTodo Appの改善提案を行うプロダクトマネージャーです。
-以下のユーザーインタビューの内容を分析し、Todo Appの具体的な改善タスクを抽出してください。
+    const prompt = `You are a product manager proposing improvements for a Todo App.
+Analyze the following user interview and extract specific improvement tasks for the Todo App.
 
-## プロダクト情報
-- 製品名: ${hearingTitle}
-- 説明: ${hearingDescription || "Todo管理アプリケーション"}
+## Product Information
+- Product Name: ${hearingTitle}
+- Description: ${hearingDescription || "Todo management application"}
 
-## インタビュー内容
+## Interview Content
 ${conversation}
 
-## 出力形式
-以下のJSON形式で、3〜5個の改善タスクを出力してください。
-各タスクは具体的で実装可能なものにしてください。
+## Output Format
+Output 3-5 improvement tasks in the following JSON format.
+Each task should be specific and implementable.
 
-重要な制約:
-- タスクはTodo Appのコード修正として実装可能なものに限定
-- ユーザーの声を直接引用してreasonに含める
-- contentは実装者が理解できる具体的な内容にする
+Important constraints:
+- Tasks must be implementable as code changes to the Todo App
+- Include direct quotes from the user in the reason
+- Content should be specific enough for a developer to understand
 
 \`\`\`json
 {
   "tasks": [
     {
-      "content": "具体的な改善タスクの内容（例：締め切りが近いタスクを上部に表示する機能を追加）",
-      "reason": "ユーザーの声：「○○」というフィードバックがあり、これを改善することで○○が向上する"
+      "content": "Specific improvement task (e.g., Add feature to display tasks with approaching deadlines at the top)",
+      "reason": "User feedback: \"[quote from user]\" - Addressing this will improve [specific benefit]"
     }
   ]
 }
