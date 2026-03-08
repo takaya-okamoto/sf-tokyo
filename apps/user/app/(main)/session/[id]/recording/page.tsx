@@ -37,7 +37,11 @@ export default function RecordingPage({
       } | null;
 
       if (session?.hearing_request) {
-        setTargetUrl(session.hearing_request.target_url);
+        // hSessionIdパラメータを追加してSDKが初期化できるようにする
+        const baseUrl = session.hearing_request.target_url;
+        const separator = baseUrl.includes("?") ? "&" : "?";
+        const urlWithSessionId = `${baseUrl}${separator}hSessionId=${id}`;
+        setTargetUrl(urlWithSessionId);
         setHearingTitle(session.hearing_request.title);
       }
     }

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button } from "@repo/ui";
-import { FileText, Users, Clock, Plus } from "lucide-react";
+import { FileText, Users, Clock, Plus, Settings } from "lucide-react";
 
 export default async function ProjectDashboardPage({
   params,
@@ -77,6 +77,12 @@ export default async function ProjectDashboardPage({
           </p>
         </div>
         <div className="flex gap-2">
+          <Link href={`/projects/${projectId}/settings`}>
+            <Button variant="outline">
+              <Settings className="h-4 w-4 mr-2" />
+              Settings
+            </Button>
+          </Link>
           <Link href={`/projects/${projectId}/hearings/new`}>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
@@ -209,6 +215,12 @@ export default async function ProjectDashboardPage({
               <Button variant="outline" className="w-full justify-start">
                 <Plus className="h-4 w-4 mr-2" />
                 Create New Hearing
+              </Button>
+            </Link>
+            <Link href={`/projects/${projectId}/settings`} className="block">
+              <Button variant="outline" className="w-full justify-start">
+                <Settings className="h-4 w-4 mr-2" />
+                SDK Integration
               </Button>
             </Link>
           </CardContent>

@@ -274,6 +274,8 @@ export type Database = {
           created_at: string
           hearing_request_id: string
           id: string
+          sdk_initialized_at: string | null
+          sdk_last_activity_at: string | null
           started_at: string | null
           status: Database["public"]["Enums"]["session_status"]
           updated_at: string
@@ -284,6 +286,8 @@ export type Database = {
           created_at?: string
           hearing_request_id: string
           id?: string
+          sdk_initialized_at?: string | null
+          sdk_last_activity_at?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["session_status"]
           updated_at?: string
@@ -294,6 +298,8 @@ export type Database = {
           created_at?: string
           hearing_request_id?: string
           id?: string
+          sdk_initialized_at?: string | null
+          sdk_last_activity_at?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["session_status"]
           updated_at?: string
@@ -412,6 +418,68 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "recordings_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "interview_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sdk_events: {
+        Row: {
+          created_at: string
+          elapsed_ms: number
+          event_type: string
+          id: string
+          metadata: Json | null
+          page_title: string | null
+          page_url: string
+          scroll_depth: number | null
+          session_id: string
+          target_selector: string | null
+          timestamp: string
+          viewport_height: number | null
+          viewport_width: number | null
+          x_position: number | null
+          y_position: number | null
+        }
+        Insert: {
+          created_at?: string
+          elapsed_ms: number
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          page_title?: string | null
+          page_url: string
+          scroll_depth?: number | null
+          session_id: string
+          target_selector?: string | null
+          timestamp?: string
+          viewport_height?: number | null
+          viewport_width?: number | null
+          x_position?: number | null
+          y_position?: number | null
+        }
+        Update: {
+          created_at?: string
+          elapsed_ms?: number
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          page_title?: string | null
+          page_url?: string
+          scroll_depth?: number | null
+          session_id?: string
+          target_selector?: string | null
+          timestamp?: string
+          viewport_height?: number | null
+          viewport_width?: number | null
+          x_position?: number | null
+          y_position?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sdk_events_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "interview_sessions"

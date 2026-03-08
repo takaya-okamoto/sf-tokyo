@@ -4,15 +4,19 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
+    "dev:all": "concurrently \"turbo run dev\" \"supabase functions serve\"",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "db:status": "supabase status",
     "db:reset": "supabase db reset",
-    "db:types": "supabase gen types typescript --local > packages/database/src/types/database.types.ts"
+    "db:types": "supabase gen types typescript --local > packages/database/src/types/database.types.ts",
+    "functions:serve": "supabase functions serve",
+    "functions:deploy": "supabase functions deploy"
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
     "prettier": "^3.2.5",
     "supabase": "^1.226.4",
     "turbo": "^2.3.0",

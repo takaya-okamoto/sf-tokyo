@@ -1,6 +1,7 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
+  "globalEnv": ["SDK_CDN_URL", "USER_APP_URL"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
